@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+* {
+  font-family: Outfit;
+}
+.bg-primary {
+  background-color: #5f6fff;
+}
+.active hr {
+  @apply block;
+}
+::-webkit-scrollbar {
+  @apply hidden; /* Safari and Chrome */
+}
+
+@media (max-width: 740px) {
+  .active p {
+    @apply text-white bg-blue-500;
+  }
+}

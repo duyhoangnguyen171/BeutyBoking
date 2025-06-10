@@ -1,0 +1,60 @@
+.appointment-canceled {
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+.appointment-item {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.appointment-header {
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.appointment-body p {
+  margin: 4px 0;
+  color: #444;
+}
+
+.customer-name .highlight {
+  color: #d9534f;
+  font-weight: bold;
+}
+
+.appointment-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.restore-btn {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.delete-btn {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.restore-btn:hover,
+.delete-btn:hover {
+  opacity: 0.9;
+}
