@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@ckeditor/ckeditor5-build-classic": "^41.4.2",
+    "@ckeditor/ckeditor5-react": "^9.5.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@fortawesome/fontawesome-svg-core": "^6.7.2",
@@ -20,6 +22,7 @@
     "date-fns-tz": "^3.2.0",
     "firebase": "^11.8.1",
     "lucide-react": "^0.501.0",
+    "notistack": "^3.0.2",
     "ra-data-simple-rest": "^4.15.1",
     "react": "^18.2.0",
     "react-admin": "^4.16.14",

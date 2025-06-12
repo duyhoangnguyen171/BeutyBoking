@@ -1,5 +1,5 @@
 import React from "react";
-import SalonTeam from "../assets/images/SalonBanner.jpg";
+import SalonTeam from "../assets/images/banner4.jpg";
 import { FaScissors, FaBrush, FaAward, FaHeart } from "react-icons/fa6";
 import { useNavigate } from "react-router-dom";
 

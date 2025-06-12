@@ -1,6 +1,4 @@
-﻿// ✅ Final version of WorkShiftsController (refactored to use StaffTimeSlots)
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -100,48 +98,62 @@ namespace BookingSalonHair.Controllers
 
         [HttpPut("{id}")]
         [Authorize(Roles = "admin")]
-        public async Task<IActionResult> PutWorkShift(int id, WorkShift workShift)
+        public async Task<IActionResult> PutWorkShift(int id, [FromBody] UpdateWorkShiftDto dto)
         {
-            // Kiểm tra ID từ URL và body có khớp không
-            if (id != workShift.Id)
+            if (id != dto.Id)
+            {
                 return BadRequest("ID không khớp.");
+            }
+
+            // Lấy thông tin ca làm cần cập nhật từ cơ sở dữ liệu
+            var existingWorkShift = await _context.WorkShifts.FirstOrDefaultAsync(ws => ws.Id == id);
+            if (existingWorkShift == null)
+            {
+                return NotFound("Ca làm không tồn tại.");
+            }
+
+            // Cập nhật các thuộc tính của WorkShift
+            existingWorkShift.Name = dto.Name;
+            existingWorkShift.StartTime = TimeSpan.Parse(dto.StartTime);  // Parse thời gian bắt đầu
+            existingWorkShift.EndTime = TimeSpan.Parse(dto.EndTime);  // Parse thời gian kết thúc
+            existingWorkShift.MaxUsers = dto.MaxUsers;
+            existingWorkShift.Date = dto.Date;  // Cập nhật ngày làm
 
             // Kiểm tra các trường bắt buộc và hợp lệ
-            if (string.IsNullOrWhiteSpace(workShift.Name))
+            if (string.IsNullOrWhiteSpace(existingWorkShift.Name))
             {
                 return BadRequest("Tên ca làm không được để trống.");
             }
 
-            if (workShift.MaxUsers <= 0)
+            if (existingWorkShift.MaxUsers <= 0)
             {
                 return BadRequest("Số lượng người tối đa phải lớn hơn 0.");
             }
 
-            // Loại bỏ các trường không cần thiết (nếu có)
-            workShift.Appointments = null; // Hoặc có thể giữ nếu cần
-            workShift.UserWorkShifts = null; // Hoặc có thể giữ nếu cần
+            // Kiểm tra thời gian bắt đầu và kết thúc hợp lệ
+            if (existingWorkShift.StartTime >= existingWorkShift.EndTime)
+            {
+                return BadRequest("Thời gian kết thúc phải sau thời gian bắt đầu.");
+            }
 
-            _context.Entry(workShift).State = EntityState.Modified;
-
+            // Lưu các thay đổi vào cơ sở dữ liệu
             try
             {
-                // Lưu thay đổi
                 await _context.SaveChangesAsync();
             }
             catch (DbUpdateConcurrencyException)
             {
-                // Xử lý khi ca làm không tồn tại
-                if (!await _context.WorkShifts.AnyAsync(w => w.Id == id))
+                if (!await _context.WorkShifts.AnyAsync(ws => ws.Id == id))
+                {
                     return NotFound("Ca làm không tồn tại.");
+                }
 
                 throw;
             }
 
-            // Trả về NoContent khi cập nhật thành công
-            return NoContent();
+            // Trả về thông báo thành công
+            return Ok(new { message = $"Ca làm '{existingWorkShift.Name}' đã được cập nhật thành công.", workShift = existingWorkShift });
         }
-
-
         [HttpDelete("{id}")]
         [Authorize(Roles = "admin")]
         public async Task<IActionResult> DeleteWorkShift(int id)

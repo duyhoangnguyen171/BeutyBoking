@@ -1,12 +1,14 @@
 ﻿namespace BookingSalonHair.DTOs
 {
-    public class UserDTO
+    public class UpdateProfileDto
     {
-        public int Id { get; set; }
         public string FullName { get; set; }
         public string Email { get; set; }
         public string Phone { get; set; }
-        public string Role { get; set; }
         public string? imageurl { get; set; }
+
+        // Nếu người dùng muốn đổi mật khẩu
+        public string? CurrentPassword { get; set; }
+        public string? NewPassword { get; set; }
     }
 }

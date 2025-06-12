@@ -1,25 +1,21 @@
-import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Button,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Select,
   Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  TextField,
 } from "@mui/material";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import WorkShiftService from "../../services/WorkShiftService";
+import WorkShiftService from "../../services/WorkShiftService"; // Import service
 
 const WorkShiftEdit = ({ open = true, onClose }) => {
   const navigate = useNavigate();
-  const { id } = useParams();
+  const { id } = useParams(); // Get ID from URL
 
   const [formData, setFormData] = useState({
     name: "",
@@ -28,15 +24,16 @@ const WorkShiftEdit = ({ open = true, onClose }) => {
     dayOfWeek: 0,
     maxUsers: 1,
     startTime: "08:00", // Default start time
-    endTime: "16:00", // Default end time
+    endTime: "22:00", // Default end time
   });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
-  // Reusable toast function
+  const [loading, setLoading] = useState(false); // Loading state for async operations
+  const [error, setError] = useState(""); // For error messages
+
+  // Toast utility function for better code reuse
   const showToast = (message, type = "error") => {
     toast[type](message, {
-      position: "top-right",
+      position: "center-right",
       autoClose: 3000,
       hideProgressBar: false,
       closeOnClick: true,
@@ -46,11 +43,11 @@ const WorkShiftEdit = ({ open = true, onClose }) => {
     });
   };
 
+  // Fetch data when form opens and the ID is available
   useEffect(() => {
     const fetchWorkShift = async () => {
       if (!id || isNaN(id)) {
         setError("ID ca làm không hợp lệ.");
-        setLoading(false);
         showToast("ID ca làm không hợp lệ.");
         return;
       }
@@ -83,13 +80,10 @@ const WorkShiftEdit = ({ open = true, onClose }) => {
           dayOfWeek: dayOfWeek,
           maxUsers: Number(shift.maxUsers) || 1,
           startTime: shift.startTime || "08:00",
-          endTime: shift.endTime || "16:00",
+          endTime: shift.endTime || "22:00",
         });
-        setLoading(false);
       } catch (err) {
-        console.error("Error fetching work shift:", err);
         setError("Không thể tải thông tin ca làm.");
-        setLoading(false);
         showToast("Không thể tải thông tin ca làm.");
       }
     };
@@ -97,15 +91,23 @@ const WorkShiftEdit = ({ open = true, onClose }) => {
     fetchWorkShift();
   }, [id]);
 
+  // Handle changes in form fields
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]:
-        name === "maxUsers" || name === "shiftType" ? Number(value) : value,
-    }));
+    const newValue =
+      name === "maxUsers" || name === "shiftType" ? Number(value) : value;
+
+    const updatedFormData = {
+      ...formData,
+      [name]: newValue,
+    };
+
+    console.log("Updated formData:", updatedFormData); // ← Log dữ liệu mới
+
+    setFormData(updatedFormData);
   };
 
+  // Handle date field change
   const handleDateChange = (e) => {
     const selectedDate = new Date(e.target.value);
     if (isNaN(selectedDate.getTime())) {
@@ -114,7 +116,6 @@ const WorkShiftEdit = ({ open = true, onClose }) => {
       return;
     }
     const weekday = selectedDate.getDay();
-
     setFormData((prev) => ({
       ...prev,
       date: e.target.value,
@@ -122,29 +123,29 @@ const WorkShiftEdit = ({ open = true, onClose }) => {
     }));
   };
 
+  // Handle save form data
   const handleSave = async (e) => {
     e.preventDefault();
-    setError(""); // Reset error messages
+    setError(""); // Reset any previous error messages
 
-    // Validation
-    if (!formData.name || formData.name.trim() === "") {
+    // Validation checks
+    if (!formData.name.trim()) {
       setError("Tên ca làm không được để trống.");
       showToast("Tên ca làm không được để trống.");
       return;
     }
-
     if (formData.maxUsers <= 0) {
       setError("Số lượng người tối đa phải lớn hơn 0.");
       showToast("Số lượng người tối đa phải lớn hơn 0.");
       return;
     }
-
     if (!formData.date) {
       setError("Vui lòng chọn ngày làm việc.");
       showToast("Vui lòng chọn ngày làm việc.");
       return;
     }
 
+    // Validate startTime and endTime
     if (!formData.startTime || !formData.endTime) {
       setError("Vui lòng nhập thời gian bắt đầu và kết thúc.");
       showToast("Vui lòng nhập thời gian bắt đầu và kết thúc.");
@@ -162,29 +163,35 @@ const WorkShiftEdit = ({ open = true, onClose }) => {
       return;
     }
 
-    // In ra payload để kiểm tra
+    // Remove seconds (HH:mm)
+    const startTime = formData.startTime.split(":").slice(0, 2).join(":");
+    const endTime = formData.endTime.split(":").slice(0, 2).join(":");
+
+    // Prepare the payload to send to the server
     const payload = {
+      id: id,
       name: formData.name.trim(),
-      dayOfWeek: formData.dayOfWeek,
       maxUsers: formData.maxUsers,
-      date: new Date(formData.date).toISOString(), // Chuyển đổi date sang ISO string
-      startTime: formData.startTime, // Giữ nguyên định dạng HH:mm
-      endTime: formData.endTime, // Giữ nguyên định dạng HH:mm
+      date: new Date(formData.date).toISOString(), // Make sure date is in ISO format
+      startTime: startTime,
+      endTime: endTime,
     };
-    console.log(payload); // Kiểm tra payload trước khi gửi lên server
+
+    // Log the entire payload
+    console.log("Payload data to be sent:", payload); // Log the payload
 
     try {
-      setLoading(true);
-      // Gửi dữ liệu lên backend
-      await WorkShiftService.update(Number(id), payload);
+      setLoading(true); // Show loading while the request is being processed
+      // Send data to backend (use the correct API endpoint)
+      await WorkShiftService.update(id, payload);
       showToast("Cập nhật ca làm thành công!", "success");
       navigate("/admin/workshifts");
-      if (onClose) onClose(); // Đóng modal hoặc thực hiện hành động sau khi lưu thành công
+      if (onClose) onClose(); // Close modal or perform action after saving
     } catch (err) {
       setLoading(false);
       let errorMessage = err.message || "Đã xảy ra lỗi khi cập nhật ca làm.";
 
-      // Cải thiện xử lý lỗi
+      // Handle errors based on response status
       if (err.response?.status === 400) {
         errorMessage =
           err.response.data.message ||
@@ -199,10 +206,10 @@ const WorkShiftEdit = ({ open = true, onClose }) => {
 
       setError(errorMessage);
       showToast(errorMessage);
-      console.error("Error updating work shift:", err.response?.data || err);
     }
   };
 
+  // Handle cancel action
   const handleCancel = () => {
     setFormData({
       name: "",
@@ -211,24 +218,12 @@ const WorkShiftEdit = ({ open = true, onClose }) => {
       dayOfWeek: 0,
       maxUsers: 1,
       startTime: "08:00",
-      endTime: "16:00",
+      endTime: "22:00",
     });
     setError("");
     if (onClose) onClose();
     navigate("/admin/workshifts");
   };
-
-  if (loading) {
-    return (
-      <Box sx={{ textAlign: "center", p: 3 }}>Đang tải thông tin ca làm...</Box>
-    );
-  }
-
-  if (error && !formData.name) {
-    return (
-      <Box sx={{ textAlign: "center", p: 3, color: "error.main" }}>{error}</Box>
-    );
-  }
 
   return (
     <Dialog open={open} onClose={handleCancel} fullWidth maxWidth="sm">
@@ -245,21 +240,8 @@ const WorkShiftEdit = ({ open = true, onClose }) => {
             required
             error={!!error && formData.name.trim() === ""}
             helperText={error && formData.name.trim() === "" ? error : ""}
-            aria-label="Tên ca làm"
           />
-          <FormControl fullWidth margin="normal">
-            <InputLabel>Loại ca</InputLabel>
-            <Select
-              name="shiftType"
-              value={formData.shiftType}
-              onChange={handleChange}
-              label="Loại ca"
-            >
-              <MenuItem value={0}>Ca sáng</MenuItem>
-              <MenuItem value={1}>Ca chiều</MenuItem>
-              <MenuItem value={2}>Ca tối</MenuItem>
-            </Select>
-          </FormControl>
+
           <TextField
             fullWidth
             margin="normal"
@@ -272,34 +254,27 @@ const WorkShiftEdit = ({ open = true, onClose }) => {
             InputLabelProps={{ shrink: true }}
             error={!!error && !formData.date}
             helperText={error && !formData.date ? error : ""}
-            aria-label="Chọn ngày"
           />
-          <TextField
-            fullWidth
-            margin="normal"
-            label="Thời gian bắt đầu (HH:mm)"
-            name="startTime"
-            value={formData.startTime}
-            onChange={handleChange}
-            required
-            error={!!error && !formData.startTime}
-            helperText={error && !formData.startTime ? error : ""}
-            aria-label="Thời gian bắt đầu"
-            placeholder="08:00"
-          />
-          <TextField
-            fullWidth
-            margin="normal"
-            label="Thời gian kết thúc (HH:mm)"
-            name="endTime"
-            value={formData.endTime}
-            onChange={handleChange}
-            required
-            error={!!error && !formData.endTime}
-            helperText={error && !formData.endTime ? error : ""}
-            aria-label="Thời gian kết thúc"
-            placeholder="16:00"
-          />
+          <div>
+            <label>Giờ bắt đầu:</label>
+            <input
+              type="time"
+              name="startTime"
+              value={formData.startTime}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          <div>
+            <label>Giờ kết thúc:</label>
+            <input
+              type="time"
+              name="endTime"
+              value={formData.endTime}
+              onChange={handleChange}
+              required
+            />
+          </div>
           <TextField
             fullWidth
             margin="normal"
@@ -312,7 +287,6 @@ const WorkShiftEdit = ({ open = true, onClose }) => {
             required
             error={!!error && formData.maxUsers <= 0}
             helperText={error && formData.maxUsers <= 0 ? error : ""}
-            aria-label="Số lượng người tối đa"
           />
         </Box>
       </DialogContent>
@@ -328,7 +302,7 @@ const WorkShiftEdit = ({ open = true, onClose }) => {
         </Button>
       </DialogActions>
       <ToastContainer
-        position="bottom-right"
+        position="top-center"
         autoClose={3000}
         hideProgressBar={false}
         newestOnTop={false}

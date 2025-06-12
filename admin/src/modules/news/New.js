@@ -12,73 +12,80 @@ import {
   TableRow,
   TextField,
 } from "@mui/material";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import "../../asset/styles/service/service.css";
-import ServiceService from "../../services/Serviceservice";
-import ServiceAdd from "./ServiceAdd";
-import ServiceEdit from "./ServiceEdit";
+// import "../../asset/styles/new/new.css"; // Giả định bạn có file CSS riêng cho News
+import NewService from "../../services/NewService";
+// import NewsAdd from "./NewsAdd";
+// import NewsEdit from "./NewsEdit";
 
-const Services = () => {
-  const [services, setServices] = useState([]);
-  const [filteredServices, setFilteredServices] = useState([]);
+const News = () => {
+  const [news, setNews] = useState([]);
+  const [filteredNews, setFilteredNews] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [openAdd, setOpenAdd] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
   const [openView, setOpenView] = useState(false);
-  const [selectedService, setSelectedService] = useState(null);
-  const [selectedServiceId, setSelectedServiceId] = useState(null);
+  const [selectedNews, setSelectedNews] = useState(null);
+  const [selectedNewsId, setSelectedNewsId] = useState(null);
   const [page, setPage] = useState(1);
   const rowsPerPage = 3;
-  const inpRef = useRef();
 
-  const loadServices = async () => {
+  const loadNews = async () => {
     try {
-      const response = await ServiceService.getAll();
+      const response = await NewService.getAll();
       const data = response.data;
       if (data && Array.isArray(data.$values)) {
-        setServices(data.$values);
-        setFilteredServices(data.$values);
+        setNews(data.$values);
+        setFilteredNews(data.$values);
       } else {
-        setServices([]);
-        setFilteredServices([]);
+        setNews([]);
+        setFilteredNews([]);
       }
     } catch (error) {
-      console.error("Lỗi khi tải dịch vụ:", error);
-      setServices([]);
-      setFilteredServices([]);
+      console.error("Lỗi khi tải tin tức:", error);
+      setNews([]);
+      setFilteredNews([]);
+      toast.error("Có lỗi khi tải tin tức. Vui lòng thử lại!", {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
     }
   };
 
   useEffect(() => {
-    loadServices();
+    loadNews();
   }, []);
 
   useEffect(() => {
-    let filtered = [...services];
+    let filtered = [...news];
     if (searchTerm) {
-      filtered = filtered.filter((service) =>
-        service.name.toLowerCase().includes(searchTerm.toLowerCase())
+      filtered = filtered.filter((item) =>
+        item.title.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
-    setFilteredServices(filtered);
+    setFilteredNews(filtered);
     setPage(1);
-  }, [searchTerm, services]);
+  }, [searchTerm, news]);
 
   const handleAdd = () => setOpenAdd(true);
   const handleCloseAdd = () => setOpenAdd(false);
 
   const handleEdit = (id) => {
-    setSelectedServiceId(id);
+    setSelectedNewsId(id);
     setOpenEdit(true);
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("Bạn có chắc muốn xóa dịch vụ này?")) {
+    if (window.confirm("Bạn có chắc muốn xóa tin tức này?")) {
       try {
-        await ServiceService.delete(id);
-        toast.success("Dịch vụ đã bị xóa thành công!", {
+        await NewService.delete(id);
+        toast.success("Tin tức đã bị xóa thành công!", {
           position: "top-right",
           autoClose: 3000,
           hideProgressBar: false,
@@ -86,10 +93,10 @@ const Services = () => {
           pauseOnHover: true,
           draggable: true,
         });
-        loadServices();
+        loadNews();
       } catch (error) {
-        console.error("Lỗi khi xoá dịch vụ:", error);
-        toast.error("Có lỗi khi xóa dịch vụ. Vui lòng thử lại!", {
+        console.error("Lỗi khi xóa tin tức:", error);
+        toast.error("Có lỗi khi xóa tin tức. Vui lòng thử lại!", {
           position: "top-right",
           autoClose: 3000,
           hideProgressBar: false,
@@ -101,8 +108,8 @@ const Services = () => {
     }
   };
 
-  const handleView = (service) => {
-    setSelectedService(service);
+  const handleView = (newsItem) => {
+    setSelectedNews(newsItem);
     setOpenView(true);
   };
 
@@ -116,21 +123,21 @@ const Services = () => {
     setPage(value);
   };
 
-  const paginatedServices = filteredServices.slice(
+  const paginatedNews = filteredNews.slice(
     (page - 1) * rowsPerPage,
     page * rowsPerPage
   );
-  const totalPages = Math.ceil(filteredServices.length / rowsPerPage);
+  const totalPages = Math.ceil(filteredNews.length / rowsPerPage);
 
   return (
     <div>
-      <h1>Dịch vụ</h1>
+      <h1>Tin tức</h1>
       <Stack direction="row" spacing={2} style={{ marginBottom: "20px" }}>
         <Button variant="contained" color="primary" onClick={handleAdd}>
-          Thêm dịch vụ
+          Thêm tin tức
         </Button>
         <TextField
-          label="Tìm kiếm theo tên dịch vụ"
+          label="Tìm kiếm theo tiêu đề tin tức"
           variant="outlined"
           value={searchTerm}
           onChange={handleSearchChange}
@@ -138,14 +145,14 @@ const Services = () => {
           size="small"
         />
       </Stack>
-      <ServiceAdd
+      {/* <NewsAdd
         open={openAdd}
         onClose={handleCloseAdd}
         onSuccess={() => {
-          loadServices();
+          loadNews();
           handleCloseAdd();
         }}
-      />
+      /> */}
 
       <TableContainer component={Paper} style={{ marginTop: "20px" }}>
         <Table>
@@ -153,34 +160,40 @@ const Services = () => {
             <TableRow>
               <TableCell>ID</TableCell>
               <TableCell>Hình ảnh</TableCell>
-              <TableCell>Tên dịch vụ</TableCell>
-              <TableCell>Giá</TableCell>
-              <TableCell>Thời gian</TableCell>
-              <TableCell>Chi tiết</TableCell>
+              <TableCell>Tiêu đề</TableCell>
+              <TableCell>Nội dung</TableCell>
+              <TableCell>Ngày tạo</TableCell>
               <TableCell>Hành động</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {paginatedServices.length > 0 ? (
-              paginatedServices.map((service) => (
-                <TableRow key={service.id}>
-                  <TableCell>{service.id}</TableCell>
+            {paginatedNews.length > 0 ? (
+              paginatedNews.map((newsItem) => (
+                <TableRow key={newsItem.id}>
+                  <TableCell>{newsItem.id}</TableCell>
                   <TableCell>
-                    <img
-                      src={service.imageurl}
-                      className="table-image"
-                      alt={service.name}
-                    />
+                    {newsItem.imageUrl && (
+                      <img
+                        src={newsItem.imageUrl}
+                        className="table-image"
+                        alt={newsItem.title}
+                      />
+                    )}
                   </TableCell>
-                  <TableCell>{service.name}</TableCell>
-                  <TableCell>{service.price}</TableCell>
-                     <TableCell>{service.duration}</TableCell>
-                  <TableCell dangerouslySetInnerHTML={{ __html: service.description }} />
+                  <TableCell>{newsItem.title}</TableCell>
+                  <TableCell>
+                    {newsItem.content.length > 100
+                      ? `${newsItem.content.substring(0, 100)}...`
+                      : newsItem.content}
+                  </TableCell>
+                  <TableCell>
+                    {new Date(newsItem.createdAt).toLocaleDateString()}
+                  </TableCell>
                   <TableCell>
                     <Stack direction="row" spacing={1} className="actions">
                       <Button
                         size="small"
-                        onClick={() => handleView(service)}
+                        onClick={() => handleView(newsItem)}
                         variant="outlined"
                         color="info"
                       >
@@ -188,7 +201,7 @@ const Services = () => {
                       </Button>
                       <Button
                         size="small"
-                        onClick={() => handleEdit(service.id)}
+                        onClick={() => handleEdit(newsItem.id)}
                         variant="outlined"
                         color="warning"
                       >
@@ -196,7 +209,7 @@ const Services = () => {
                       </Button>
                       <Button
                         size="small"
-                        onClick={() => handleDelete(service.id)}
+                        onClick={() => handleDelete(newsItem.id)}
                         variant="outlined"
                         color="error"
                       >
@@ -208,8 +221,8 @@ const Services = () => {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={5} align="center">
-                  Không có dịch vụ nào để hiển thị.
+                <TableCell colSpan={6} align="center">
+                  Không có tin tức nào để hiển thị.
                 </TableCell>
               </TableRow>
             )}
@@ -217,7 +230,7 @@ const Services = () => {
         </Table>
       </TableContainer>
 
-      {filteredServices.length > 0 && (
+      {filteredNews.length > 0 && (
         <Pagination
           count={totalPages}
           page={page}
@@ -228,16 +241,16 @@ const Services = () => {
           boundaryCount={1}
         />
       )}
-
-      <ServiceEdit
+{/* 
+      <NewsEdit
         open={openEdit}
         onClose={() => setOpenEdit(false)}
-        serviceId={selectedServiceId}
+        newsId={selectedNewsId}
         onSuccess={() => {
-          loadServices();
+          loadNews();
           setOpenEdit(false);
         }}
-      />
+      /> */}
 
       <Modal open={openView} onClose={handleCloseView}>
         <div
@@ -250,25 +263,25 @@ const Services = () => {
             marginTop: "50px",
           }}
         >
-          <h3>Chi tiết dịch vụ</h3>
-          {selectedService && (
+          <h3>Chi tiết tin tức</h3>
+          {selectedNews && (
             <>
               <p>
-                <strong>Tên:</strong> {selectedService.name}
+                <strong>Tiêu đề:</strong> {selectedNews.title}
               </p>
               <p>
-                <strong>Giá:</strong> {selectedService.price}
+                <strong>Nội dung:</strong> {selectedNews.content}
               </p>
               <p>
-                <strong>Thời gian:</strong> {selectedService.durationMinutes}{" "}
-                phút
+                <strong>Ngày tạo:</strong>{" "}
+                {new Date(selectedNews.createdAt).toLocaleDateString()}
               </p>
-              {selectedService.imageUrl && (
+              {selectedNews.imageUrl && (
                 <p>
                   <strong>Ảnh:</strong>
                   <img
-                    src={selectedService.imageUrl}
-                    alt={selectedService.name}
+                    src={selectedNews.imageUrl}
+                    alt={selectedNews.title}
                     style={{ maxWidth: "100%", maxHeight: "200px" }}
                   />
                 </p>
@@ -286,4 +299,4 @@ const Services = () => {
   );
 };
 
-export default Services;
+export default News;

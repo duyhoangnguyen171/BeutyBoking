@@ -45,6 +45,11 @@ namespace BookingSalonHair.Controllers
         [Authorize(Roles = "admin,staff")]
         public async Task<ActionResult<ServiceModel>> PostService(ServiceModel service)
         {
+            var category = await _context.Categories.FindAsync(service.CategoryId);
+            if (category == null)
+            {
+                return BadRequest("Danh mục không tồn tại.");
+            }
             _context.Services.Add(service);
             await _context.SaveChangesAsync();
             return CreatedAtAction(nameof(GetService), new { id = service.Id }, service);

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SalonBooking.API.Data;
 
@@ -11,9 +12,11 @@ using SalonBooking.API.Data;
 namespace BookingSalonHair.Migrations
 {
     [DbContext(typeof(SalonContext))]
-    partial class SalonContextModelSnapshot : ModelSnapshot
+    [Migration("20250612060102_AddPasswordResetTokensTable")]
+    partial class AddPasswordResetTokensTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -88,23 +91,6 @@ namespace BookingSalonHair.Migrations
                     b.HasIndex("ServiceId");
 
                     b.ToTable("AppointmentServices");
-                });
-
-            modelBuilder.Entity("BookingSalonHair.Models.Category", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Categories");
                 });
 
             modelBuilder.Entity("BookingSalonHair.Models.Contact", b =>
@@ -271,15 +257,9 @@ namespace BookingSalonHair.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int?>("CategoryId")
-                        .HasColumnType("int");
-
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("Duration")
-                        .HasColumnType("int");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -295,8 +275,6 @@ namespace BookingSalonHair.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CategoryId");
 
                     b.ToTable("Services");
                 });
@@ -457,9 +435,6 @@ namespace BookingSalonHair.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("imageurl")
-                        .HasColumnType("nvarchar(max)");
-
                     b.HasKey("Id");
 
                     b.HasIndex("Email")
@@ -559,16 +534,6 @@ namespace BookingSalonHair.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("BookingSalonHair.Models.Service", b =>
-                {
-                    b.HasOne("BookingSalonHair.Models.Category", "Category")
-                        .WithMany("Services")
-                        .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("Category");
-                });
-
             modelBuilder.Entity("BookingSalonHair.Models.StaffTimeSlot", b =>
                 {
                     b.HasOne("User", "Staff")
@@ -633,11 +598,6 @@ namespace BookingSalonHair.Migrations
             modelBuilder.Entity("BookingSalonHair.Models.Appointment", b =>
                 {
                     b.Navigation("AppointmentServices");
-                });
-
-            modelBuilder.Entity("BookingSalonHair.Models.Category", b =>
-                {
-                    b.Navigation("Services");
                 });
 
             modelBuilder.Entity("BookingSalonHair.Models.HistoryWorkShift", b =>

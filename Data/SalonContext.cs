@@ -20,7 +20,8 @@ namespace SalonBooking.API.Data
         public DbSet<HistoryWorkShift> HistoryWorkShifts { get; set; }
         public DbSet<UserWorkShift> UserWorkShifts { get; set; }
         public DbSet<AppointmentService> AppointmentServices { get; set; }
-
+        public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
+        public DbSet<Category> Categories { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -45,6 +46,10 @@ namespace SalonBooking.API.Data
                 .WithOne(ts => ts.WorkShift)
                 .HasForeignKey(ts => ts.WorkShiftId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<PasswordResetToken>()
+            .HasIndex(t => t.Token)
+            .IsUnique();
 
             // StaffTimeSlot
             modelBuilder.Entity<StaffTimeSlot>()
@@ -80,11 +85,18 @@ namespace SalonBooking.API.Data
                 .WithMany(w => w.Appointments)
                 .HasForeignKey(a => a.WorkShiftId)
                 .OnDelete(DeleteBehavior.SetNull);
+
             modelBuilder.Entity<Appointment>()
-    .HasOne(a => a.StaffTimeSlot)
-    .WithMany()
-    .HasForeignKey(a => a.StaffTimeSlotId)
-    .OnDelete(DeleteBehavior.Restrict);
+            .HasOne(a => a.StaffTimeSlot)
+            .WithMany()
+            .HasForeignKey(a => a.StaffTimeSlotId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Service>()
+            .HasOne(s => s.Category)
+            .WithMany(c => c.Services)
+            .HasForeignKey(s => s.CategoryId)
+            .OnDelete(DeleteBehavior.SetNull);
             // Appointment - Service
             modelBuilder.Entity<AppointmentService>()
                 .HasKey(x => new { x.AppointmentId, x.ServiceId });

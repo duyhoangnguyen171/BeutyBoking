@@ -114,5 +114,24 @@ export const createGuest = async (data) => {
     console.error("Lỗi khi tạo khách vãng lai:", error.response?.data || error.message);
     throw error; // Ném lỗi ra ngoài để xử lý
   }
+ 
 };
+export const getAppointmentHistory = async (userId) => {
+    try {
+      const response = await axios.get(
+        `${API_URL}/${userId}/appointments-history`,
+        getAuthHeader()
+      );
 
+      const data = response.data?.$values || response.data || [];
+
+      // Làm sạch mảng service nếu bị bọc trong $values
+      return data.map((item) => ({
+        ...item,
+        services: item.services?.$values || item.services || [],
+      }));
+    } catch (error) {
+      console.error("Lỗi khi lấy lịch sử đặt lịch:", error.response || error);
+      throw error;
+    }
+  };

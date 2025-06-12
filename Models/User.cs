@@ -10,6 +10,7 @@ public class User
     public string Phone { get; set; }
     public string Role { get; set; } = "Customer";
     public bool IsGuest { get; set; } = false;
+    public string? imageurl { get; set; }
 
     [JsonIgnore]
     public ICollection<Contact> Contacts { get; set; } = new List<Contact>();

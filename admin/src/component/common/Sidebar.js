@@ -40,6 +40,9 @@ const Sidebar = () => {
       <Link to={`${basePath}/contact`} className="nav-item">
         Liên hệ
       </Link>
+       <Link to={`${basePath}/news`} className="nav-item">
+        Tin tức
+      </Link>
     </div>
   );
 };

@@ -1,8 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
+using System.Text;
 using System.Threading.Tasks;
 using BookingSalonHair.DTOs;
+using BookingSalonHair.Helpers;
 using BookingSalonHair.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -17,10 +19,12 @@ namespace BookingSalonHair.Controllers
     public class UsersController : ControllerBase
     {
         private readonly SalonContext _context;
-
-        public UsersController(SalonContext context)
+        private readonly EmailHelper _emailHelper;
+        public UsersController(SalonContext context , EmailHelper emailHelper)
         {
             _context = context;
+            _emailHelper = emailHelper;
+
         }
 
         // GET: api/Users
@@ -72,7 +76,7 @@ namespace BookingSalonHair.Controllers
         }
 
         // PUT: api/Users/5
-        [HttpPost("PutUser")]
+         [HttpPost("PutUser")]
         [Authorize(Roles = "admin")]
         public async Task<IActionResult> PutUser(UserDTO userDto)
         {
@@ -203,7 +207,84 @@ namespace BookingSalonHair.Controllers
 
             return Ok(users);
         }
+        [HttpPut("update-profile")]
+        [Authorize(Roles = "customer,staff")]
+        public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileDto dto)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var currentUserId = int.Parse(userId);
 
+            var user = await _context.Users.FindAsync(currentUserId);
+            if (user == null)
+                return NotFound("Không tìm thấy người dùng.");
 
+            // Cập nhật thông tin cơ bản
+            user.FullName = dto.FullName ?? user.FullName;
+            user.Email = dto.Email ?? user.Email;
+            user.Phone = dto.Phone ?? user.Phone;
+
+            // Nếu yêu cầu đổi mật khẩu
+            if (!string.IsNullOrWhiteSpace(dto.CurrentPassword) && !string.IsNullOrWhiteSpace(dto.NewPassword))
+            {
+                var currentHashed = Convert.ToBase64String(Encoding.UTF8.GetBytes(dto.CurrentPassword));
+                if (currentHashed != user.PasswordHash)
+                    return BadRequest("Mật khẩu hiện tại không đúng.");
+
+                user.PasswordHash = Convert.ToBase64String(Encoding.UTF8.GetBytes(dto.NewPassword));
+            }
+
+            try
+            {
+                await _context.SaveChangesAsync();
+                return Ok("Cập nhật hồ sơ thành công.");
+            }
+            catch
+            {
+                return StatusCode(500, "Lỗi khi cập nhật hồ sơ.");
+            }
+        }
+        [HttpGet("{id}/appointments-history")]
+        [Authorize(Roles = "admin,staff")]
+        public async Task<IActionResult> GetAppointmentsHistoryByUser(int id)
+        {
+            var user = await _context.Users.FindAsync(id);
+            if (user == null)
+                return NotFound("Không tìm thấy người dùng.");
+
+            var appointments = await _context.Appointments
+                .Where(a => a.CustomerId == id)
+                .Include(a => a.Staff)
+                .Include(a => a.StaffTimeSlot).ThenInclude(ts => ts.TimeSlot)
+                .Include(a => a.AppointmentServices).ThenInclude(s => s.Service)
+                .OrderByDescending(a => a.AppointmentDate)
+                .ToListAsync();
+
+            var result = appointments.Select(a => new AppointmentHistoryDto
+            {
+                Id = a.Id,
+                AppointmentDate = a.AppointmentDate,
+                StatusText = GetStatusText(a.Status),
+                Notes = a.Notes,
+                StaffFullName = a.Staff?.FullName ?? "(Chưa phân công)",
+                Date = a.StaffTimeSlot?.TimeSlot.Date.ToString("yyyy-MM-dd") ?? "",
+                StartTime = a.StaffTimeSlot?.TimeSlot.StartTime.ToString(@"hh\:mm") ?? "",
+                EndTime = a.StaffTimeSlot?.TimeSlot.EndTime.ToString(@"hh\:mm") ?? "",
+                Services = a.AppointmentServices.Select(s => s.Service.Name).ToList()
+            });
+
+            return Ok(result);
+        }
+        private string GetStatusText(AppointmentStatus status)
+        {
+            return status switch
+            {
+                AppointmentStatus.Pending => "Đang chờ duyệt",
+                AppointmentStatus.Accepted => "Đã xác nhận",
+                AppointmentStatus.InProgress => "Đang thực hiện",
+                AppointmentStatus.Completed => "Đã hoàn thành",
+                AppointmentStatus.Canceled => "Đã hủy",
+                _ => "Không xác định"
+            };
+        }
     }
 }

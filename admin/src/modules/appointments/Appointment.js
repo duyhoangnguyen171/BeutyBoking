@@ -13,13 +13,14 @@ import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+// import "../../asset/styles/appointment/appointment.css";
 import AppointmentService from "../../services/AppointmentService";
 import ServiceService from "../../services/Serviceservice";
 import * as UserService from "../../services/UserService";
 import AppointmentAdd from "./AppointmentAdd";
 import AppointmentDetail from "./AppointmentDetail";
 import AppointmentEdit from "./AppointmentEdit";
-
+import { useSnackbar } from "notistack";
 const resolveReferences = (data, cache = new Map()) => {
   if (!data) return [];
   if (typeof data !== "object") return data;
@@ -68,7 +69,8 @@ const Appointment = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const rowsPerPage = 10;
-  const [reloadKey, setReloadKey] = useState(0);  
+  const [reloadKey, setReloadKey] = useState(0);
+  const { enqueueSnackbar } = useSnackbar();
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const pageParam = parseInt(params.get("page"), 10);
@@ -124,7 +126,14 @@ const Appointment = () => {
     };
     fetchData();
   }, [page, reloadKey]);
-
+  const handleRemind = async (id) => {
+    try {
+      await AppointmentService.remindAppointment(id);
+      enqueueSnackbar("Đã gửi nhắc lịch thành công.", { variant: "success" });
+    } catch (err) {
+      enqueueSnackbar("Gửi nhắc lịch thất bại.", { variant: "error" });
+    }
+  };
   useEffect(() => {
     let filtered = [...appointments].filter((app) => app.status !== 4);
 
@@ -291,6 +300,14 @@ const Appointment = () => {
                       onClick={() => handleCancel(app.id)}
                     >
                       Hủy
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      color="primary"
+                      size="small"
+                      onClick={() => handleRemind(app.id)}
+                    >
+                      Nhắc lịch
                     </Button>
                   </td>
                 </tr>

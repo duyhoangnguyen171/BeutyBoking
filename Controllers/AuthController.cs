@@ -97,7 +97,54 @@ namespace BookingSalonHair.Controllers
             }
 
             return Ok(new { token });
-           
+         
         }
+        [HttpPost("forgot-password")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
+            if (user == null)
+                return NotFound("Không tìm thấy người dùng với email này.");
+
+            var token = Guid.NewGuid().ToString();
+            var resetToken = new PasswordResetToken
+            {
+                UserId = user.Id,
+                Token = token,
+                Expiration = DateTime.UtcNow.AddMinutes(15)
+            };
+
+            _context.PasswordResetTokens.Add(resetToken);
+            await _context.SaveChangesAsync();
+
+            var resetUrl = $"http://localhost:5173/reset-password?token={token}";
+
+            await _emailHelper.SendEmailAsync(user.Email, "Yêu cầu đặt lại mật khẩu",
+                $"Nhấn vào liên kết sau để đặt lại mật khẩu (hết hạn sau 15 phút): {resetUrl}");
+
+            return Ok("Đã gửi liên kết đặt lại mật khẩu đến email.");
+        }
+        [HttpPost("reset-password")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto dto)
+        {
+            var tokenEntry = await _context.PasswordResetTokens
+                .Include(t => t.User)
+                .FirstOrDefaultAsync(t => t.Token == dto.Token && t.Expiration > DateTime.UtcNow);
+
+            if (tokenEntry == null)
+                return BadRequest("Token không hợp lệ hoặc đã hết hạn.");
+
+            // Mã hóa lại bằng base64 (theo môi trường hiện tại của bạn)
+            tokenEntry.User.PasswordHash = Convert.ToBase64String(Encoding.UTF8.GetBytes(dto.NewPassword));
+
+            // Xóa token đã dùng
+            _context.PasswordResetTokens.Remove(tokenEntry);
+            await _context.SaveChangesAsync();
+
+            return Ok("Mật khẩu đã được cập nhật.");
+        }
+
     }
 }

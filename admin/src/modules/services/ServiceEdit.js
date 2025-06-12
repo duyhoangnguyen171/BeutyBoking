@@ -13,6 +13,8 @@ import "react-toastify/dist/ReactToastify.css";
 import ServiceService from "../../services/Serviceservice";
 import { uploadFile } from "../../utils/uploadfile";
 import { UploadFile } from "@mui/icons-material";
+import { CKEditor } from "@ckeditor/ckeditor5-react"; // Thêm CKEditor
+import ClassicEditor from "@ckeditor/ckeditor5-build-classic"; // CKEditor build
 import axios from "axios";
 
 const getToken = () => localStorage.getItem("token");
@@ -23,8 +25,8 @@ const ServiceEdit = ({ open, onClose, serviceId, onSuccess }) => {
     name: "",
     price: "",
     description: "",
-    durationMinutes: "",
-    imageurl: [], // Initialize as array to match ServiceAdd
+    duration: "",
+    imageurl: [],
   });
   const [file, setFile] = useState(null); // For new file upload
   const inpRef = useRef();
@@ -33,15 +35,15 @@ const ServiceEdit = ({ open, onClose, serviceId, onSuccess }) => {
     if (open && serviceId) {
       ServiceService.getById(serviceId)
         .then((response) => {
-          const { id, name, price, description, durationMinutes, imageurl } =
+          const { id, name, price, description, duration, imageurl } =
             response.data;
           setFormData({
             id: id || 0,
             name: name || "",
             price: price || "",
             description: description || "",
-            durationMinutes: durationMinutes || "",
-            imageurl: imageurl || [], // Include existing imageurl
+            duration: duration || "",
+            imageurl: imageurl || [],
           });
         })
         .catch((error) => {
@@ -91,7 +93,7 @@ const ServiceEdit = ({ open, onClose, serviceId, onSuccess }) => {
       !formData.name ||
       !formData.price ||
       !formData.description ||
-      !formData.durationMinutes
+      !formData.duration
     ) {
       toast.error("Vui lòng điền đầy đủ thông tin!", {
         position: "top-right",
@@ -140,10 +142,7 @@ const ServiceEdit = ({ open, onClose, serviceId, onSuccess }) => {
       });
       return;
     }
-    if (
-      isNaN(formData.durationMinutes) ||
-      Number(formData.durationMinutes) <= 0
-    ) {
+    if (isNaN(formData.duration) || Number(formData.duration) <= 0) {
       toast.error("Thời gian phải là một số dương!", {
         position: "top-right",
         autoClose: 3000,
@@ -171,7 +170,7 @@ const ServiceEdit = ({ open, onClose, serviceId, onSuccess }) => {
         name: formData.name.trim(),
         price: Number(formData.price),
         description: formData.description.trim(),
-        durationMinutes: Number(formData.durationMinutes),
+        duration: Number(formData.duration),
         imageurl: downloadURL, // Include imageurl
         appointments: null, // Keep null if server handles it
       };
@@ -206,7 +205,7 @@ const ServiceEdit = ({ open, onClose, serviceId, onSuccess }) => {
         name: "",
         price: "",
         description: "",
-        durationMinutes: "",
+        duration: "",
         imageurl: [],
       });
       setFile(null);
@@ -251,23 +250,24 @@ const ServiceEdit = ({ open, onClose, serviceId, onSuccess }) => {
             onChange={handleChange}
             inputProps={{ min: 0, step: 1 }}
           />
-          <TextField
-            fullWidth
-            margin="normal"
-            label="Mô tả"
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            multiline
-            rows={4}
+          <CKEditor
+            editor={ClassicEditor}
+            data={formData.description}
+            onChange={(event, editor) => {
+              const data = editor.getData();
+              setFormData((prevData) => ({
+                ...prevData,
+                description: data,
+              }));
+            }}
           />
           <TextField
             fullWidth
             margin="normal"
             label="Thời gian (phút)"
-            name="durationMinutes"
+            name="duration"
             type="number"
-            value={formData.durationMinutes}
+            value={formData.duration}
             onChange={handleChange}
             inputProps={{ min: 0, step: 1 }}
           />
@@ -293,11 +293,7 @@ const ServiceEdit = ({ open, onClose, serviceId, onSuccess }) => {
           </label>
           {(file || formData.imageurl.length > 0) && (
             <img
-              src={
-                file
-                  ? URL.createObjectURL(file)
-                  : formData.imageurl[0] || ""
-              }
+              src={file ? URL.createObjectURL(file) : formData.imageurl[0] || ""}
               alt="Preview"
               style={{ maxWidth: "100%", maxHeight: "200px", marginTop: "10px" }}
             />

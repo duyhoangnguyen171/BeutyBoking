@@ -442,6 +442,57 @@ namespace BookingSalonHair.Controllers
             return Ok(new { message = "Hủy lịch hẹn thành công" });
         }
 
+        [HttpPost("{id}/remind")]
+        [Authorize(Roles = "admin,staff")]
+        public async Task<IActionResult> RemindCustomer(int id)
+        {
+            var appointment = await _context.Appointments
+                .Include(a => a.Customer)
+                .Include(a => a.StaffTimeSlot)
+                    .ThenInclude(sts => sts.TimeSlot)
+                .FirstOrDefaultAsync(a => a.Id == id);
+
+            if (appointment == null)
+                return NotFound("Không tìm thấy lịch hẹn.");
+
+            if (appointment.Customer == null || string.IsNullOrWhiteSpace(appointment.Customer.Email))
+                return BadRequest("Khách hàng không có địa chỉ email.");
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (appointment.StaffId.ToString() != userId && !User.IsInRole("admin"))
+                return Forbid("Bạn không có quyền gửi nhắc lịch cho lịch hẹn này.");
+
+            var appointmentTime = appointment.AppointmentDate.ToLocalTime(); // nếu cần
+            var timeSlot = appointment.StaffTimeSlot.TimeSlot;
+
+            var message = $"""
+            Xin chào {appointment.Customer.FullName},
+
+            Đây là lời nhắc về lịch hẹn của bạn tại salon:
+            - Ngày: {timeSlot.Date:dd/MM/yyyy}
+            - Giờ: {timeSlot.StartTime.ToString(@"hh\:mm")} - {timeSlot.EndTime.ToString(@"hh\:mm")}
+            - Ghi chú: {appointment.Notes ?? "(Không có ghi chú)"}
+
+            Vui lòng đến đúng giờ. Xin cảm ơn!
+            """;
+
+            try
+            {
+                await _emailHelper.SendEmailAsync(
+                    appointment.Customer.Email,
+                    "Lời nhắc lịch hẹn tại Salon",
+                    message
+                );
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Lỗi gửi email nhắc lịch: {ex.Message}");
+                return StatusCode(500, "Gửi email thất bại.");
+            }
+
+            return Ok(new { message = "Đã gửi nhắc lịch thành công đến khách hàng." });
+        }
+
         private string GetStatusText(AppointmentStatus status)
         {
             return status switch

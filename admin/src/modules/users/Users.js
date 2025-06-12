@@ -1,31 +1,31 @@
-import React, { useEffect, useState } from "react";
 import {
+  Box,
   Button,
+  CircularProgress,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Modal,
+  Pagination,
+  Paper,
+  Select,
+  Stack,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
-  Stack,
-  Modal,
-  Typography,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   TextField,
-  Pagination,
-  CircularProgress,
-  Box,
+  Typography,
 } from "@mui/material";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { useNavigate } from "react-router-dom";
+import { deleteUser, getUsers } from "../../services/UserService";
 import UserAdd from "./UserAdd";
 import UserEdit from "./UserEdit";
-import { deleteUser, getUsers } from "../../services/UserService";
 
 const Users = () => {
   const [users, setUsers] = useState([]);
@@ -66,15 +66,19 @@ const Users = () => {
       console.error("Error fetching users:", error);
       setUsers([]);
       setFilteredUsers([]);
-      toast.error("Lỗi khi tải danh sách người dùng: " + (error.response?.data?.message || error.message), {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-      });
+      toast.error(
+        "Lỗi khi tải danh sách người dùng: " +
+          (error.response?.data?.message || error.message),
+        {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+        }
+      );
     } finally {
       setLoading(false);
     }
@@ -147,15 +151,19 @@ const Users = () => {
         loadUsers();
       } catch (error) {
         console.error("Lỗi khi xóa người dùng:", error);
-        toast.error("Lỗi khi xóa người dùng: " + (error.response?.data?.message || error.message), {
-          position: "top-right",
-          autoClose: 3000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          progress: undefined,
-        });
+        toast.error(
+          "Lỗi khi xóa người dùng: " +
+            (error.response?.data?.message || error.message),
+          {
+            position: "top-right",
+            autoClose: 3000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+          }
+        );
       } finally {
         setLoading(false);
       }
@@ -231,7 +239,9 @@ const Users = () => {
         {loading ? (
           <Box display="flex" justifyContent="center" py={4}>
             <CircularProgress />
-            <Typography sx={{ ml: 2 }}>Đang tải danh sách người dùng...</Typography>
+            <Typography sx={{ ml: 2 }}>
+              Đang tải danh sách người dùng...
+            </Typography>
           </Box>
         ) : (
           <>
@@ -249,7 +259,8 @@ const Users = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {Array.isArray(paginatedUsers) && paginatedUsers.length > 0 ? (
+                  {Array.isArray(paginatedUsers) &&
+                  paginatedUsers.length > 0 ? (
                     paginatedUsers.map((user) => (
                       <TableRow key={user.id}>
                         <TableCell>{user.id}</TableCell>
@@ -258,7 +269,9 @@ const Users = () => {
                         <TableCell>{user.role || "N/A"}</TableCell>
                         <TableCell>{user.phone || "N/A"}</TableCell>
                         <TableCell>
-                          <Typography color={user.isGuest ? "error" : "primary"}>
+                          <Typography
+                            color={user.isGuest ? "error" : "primary"}
+                          >
                             {getAccountType(user.isGuest)}
                           </Typography>
                         </TableCell>
@@ -291,6 +304,18 @@ const Users = () => {
                             >
                               Xoá
                             </Button>
+                            <Button
+                              variant="outlined"
+                              color="secondary"
+                              size="small"
+                              onClick={() =>
+                                navigate(
+                                  `/admin/users/${user.id}/appointments-history`
+                                )
+                              }
+                            >
+                              Lịch sử đặt lịch
+                            </Button>
                           </Stack>
                         </TableCell>
                       </TableRow>
@@ -298,7 +323,9 @@ const Users = () => {
                   ) : (
                     <TableRow>
                       <TableCell colSpan={7} align="center">
-                        <Typography>Không có người dùng nào phù hợp.</Typography>
+                        <Typography>
+                          Không có người dùng nào phù hợp.
+                        </Typography>
                       </TableCell>
                     </TableRow>
                   )}
@@ -312,7 +339,11 @@ const Users = () => {
                 page={page}
                 onChange={handlePageChange}
                 color="primary"
-                style={{ marginTop: "16px", display: "flex", justifyContent: "center" }}
+                style={{
+                  marginTop: "16px",
+                  display: "flex",
+                  justifyContent: "center",
+                }}
                 siblingCount={1}
                 boundaryCount={1}
               />
@@ -349,11 +380,21 @@ const Users = () => {
             </Typography>
             {selectedUser && (
               <>
-                <Typography><strong>ID:</strong> {selectedUser.id}</Typography>
-                <Typography><strong>Họ tên:</strong> {selectedUser.fullName || "N/A"}</Typography>
-                <Typography><strong>Email:</strong> {selectedUser.email || "N/A"}</Typography>
-                <Typography><strong>Số điện thoại:</strong> {selectedUser.phone || "N/A"}</Typography>
-                <Typography><strong>Vai trò:</strong> {selectedUser.role || "N/A"}</Typography>
+                <Typography>
+                  <strong>ID:</strong> {selectedUser.id}
+                </Typography>
+                <Typography>
+                  <strong>Họ tên:</strong> {selectedUser.fullName || "N/A"}
+                </Typography>
+                <Typography>
+                  <strong>Email:</strong> {selectedUser.email || "N/A"}
+                </Typography>
+                <Typography>
+                  <strong>Số điện thoại:</strong> {selectedUser.phone || "N/A"}
+                </Typography>
+                <Typography>
+                  <strong>Vai trò:</strong> {selectedUser.role || "N/A"}
+                </Typography>
                 <Typography>
                   <strong>Loại tài khoản:</strong>{" "}
                   <Typography
@@ -364,7 +405,11 @@ const Users = () => {
                   </Typography>
                 </Typography>
                 {selectedUser.isGuest && (
-                  <Typography color="textSecondary" variant="body2" sx={{ mt: 1 }}>
+                  <Typography
+                    color="textSecondary"
+                    variant="body2"
+                    sx={{ mt: 1 }}
+                  >
                     Lưu ý: Đây là khách vãng lai, không có email hoặc mật khẩu.
                   </Typography>
                 )}

@@ -1,11 +1,20 @@
-
-import React, { useRef, useState } from "react";
-import { Button, TextField, Modal, Stack, Typography } from "@mui/material";
+import { UploadFile } from "@mui/icons-material";
+import {
+  Button,
+  MenuItem,
+  Modal,
+  Stack,
+  TextField,
+  Typography,
+} from "@mui/material";
+import { useEffect, useRef, useState } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import CategoriesService from "../../services/CategoriesService ";
 import ServiceService from "../../services/Serviceservice";
 import { uploadFile } from "../../utils/uploadfile";
-import { UploadFile } from "@mui/icons-material";
+import { CKEditor } from "@ckeditor/ckeditor5-react";
+import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
 
 const ServiceAdd = ({ open, onClose, onSuccess }) => {
   const [name, setName] = useState("");
@@ -13,12 +22,29 @@ const ServiceAdd = ({ open, onClose, onSuccess }) => {
   const [imageurl, setImage] = useState([]);
   const [description, setDescription] = useState("");
   const [file, setFile] = useState(null);
+  const [categoryId, setCategoryId] = useState(""); // Lưu id danh mục được chọn
+  const [categories, setCategories] = useState([]); // Danh sách danh mục từ API
+  const [duration, setDuration] = useState(0);
   const inpRef = useRef();
 
-  const handleAddService = async () => {
+  // Fetch danh mục từ API
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await CategoriesService.getAll(); // API lấy danh sách categories
+        const categoriesData = response?.$values || []; // Truy cập vào $values nếu có
+        setCategories(categoriesData); // Lưu danh sách danh mục
+      } catch (error) {
+        console.error("Lỗi khi lấy danh mục:", error);
+      }
+    };
 
+    fetchCategories();
+  }, []);
+
+  const handleAddService = async () => {
     // Kiểm tra thông tin nhập vào
-    if (!name || !price || !description) {
+    if (!name || !price || !description || !categoryId) {
       toast.error("Vui lòng điền đầy đủ thông tin!", {
         position: "top-right",
         autoClose: 3000,
@@ -30,6 +56,7 @@ const ServiceAdd = ({ open, onClose, onSuccess }) => {
       });
       return;
     }
+
     if (isNaN(price) || Number(price) <= 0) {
       toast.error("Giá phải là một số dương!", {
         position: "top-right",
@@ -42,6 +69,7 @@ const ServiceAdd = ({ open, onClose, onSuccess }) => {
       });
       return;
     }
+
     if (name.trim().length < 3) {
       toast.error("Tên dịch vụ phải có ít nhất 3 ký tự!", {
         position: "top-right",
@@ -54,6 +82,7 @@ const ServiceAdd = ({ open, onClose, onSuccess }) => {
       });
       return;
     }
+
     if (description.trim().length < 3) {
       toast.error("Mô tả phải có ít nhất 3 ký tự!", {
         position: "top-right",
@@ -81,6 +110,7 @@ const ServiceAdd = ({ open, onClose, onSuccess }) => {
         price: Number(price),
         description: description.trim(),
         imageurl: downloadURL ? [downloadURL] : [],
+        categoryId: categoryId, // Dùng categoryId từ dropdown
       };
 
       await ServiceService.create(serviceData);
@@ -100,6 +130,7 @@ const ServiceAdd = ({ open, onClose, onSuccess }) => {
       setDescription("");
       setImage([]);
       setFile(null);
+      setCategoryId(""); // Reset categoryId
       inpRef.current.value = "";
       // Delay onClose to allow toast to display
       setTimeout(() => {
@@ -119,8 +150,6 @@ const ServiceAdd = ({ open, onClose, onSuccess }) => {
       });
     }
   };
-
-  
 
   return (
     <Modal open={open} onClose={onClose}>
@@ -154,14 +183,47 @@ const ServiceAdd = ({ open, onClose, onSuccess }) => {
             type="number"
           />
           <TextField
-            label="Mô tả"
+            label="Thời gian (phút)"
             variant="outlined"
             fullWidth
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            multiline
-            rows={4}
+            value={duration}
+            onChange={(e) => setDuration(e.target.value)}
+            type="number"
+            inputProps={{ min: 1 }} // Đảm bảo nhập giá trị tối thiểu là 1 phút
           />
+          <Typography>Mô tả</Typography>
+          <CKEditor
+            editor={ClassicEditor}
+            data={description}
+            onReady={(editor) => {
+              // Vô hiệu hóa kiểm tra chính tả
+              editor.editing.view.change((writer) => {
+                writer.setAttribute(
+                  "spellcheck",
+                  "false",
+                  editor.editing.view.document.getRoot()
+                );
+              });
+            }}
+            onChange={(event, editor) => {
+              const data = editor.getData();
+              setDescription(data);
+            }}
+          />
+          <TextField
+            select
+            label="Chọn danh mục"
+            value={categoryId}
+            onChange={(e) => setCategoryId(e.target.value)}
+            fullWidth
+            variant="outlined"
+          >
+            {categories.map((category) => (
+              <MenuItem key={category.id} value={category.id}>
+                {category.name}
+              </MenuItem>
+            ))}
+          </TextField>
           <label>
             <Button
               size="small"
@@ -202,8 +264,6 @@ const ServiceAdd = ({ open, onClose, onSuccess }) => {
           >
             Thêm
           </Button>
-          {/* Temporary test button for debugging toast rendering */}
-          
         </Stack>
         <ToastContainer
           position="top-right"

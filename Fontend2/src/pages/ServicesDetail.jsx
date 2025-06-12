@@ -15,6 +15,7 @@ const ServicesDetail = () => {
     price: "",
     description: "",
     durationMinutes: "",
+    
   });
   const [relatedServices, setRelatedServices] = useState([]);
   const [isLoading, setIsLoading] = useState(true);

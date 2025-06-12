@@ -115,6 +115,16 @@ const AppointmentService = {
         );
         throw err;
       }),
+  remindAppointment: (appointmentId) =>
+    api
+      .post(`/appointments/${appointmentId}/remind`, {}, getAuthHeader())
+      .catch((err) => {
+        console.error(
+          `Remind appointment ${appointmentId} failed:`,
+          err.response || err
+        );
+        throw err;
+      }),
 };
 
 export default AppointmentService;

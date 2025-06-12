@@ -69,6 +69,7 @@ builder.Services.AddScoped<IAppointmentService, BookingSalonHair.Services.Appoin
 builder.Services.AddScoped<IServiceService, ServiceService>();
 builder.Services.AddScoped<IWorkShiftService, WorkShiftService>();
 builder.Services.AddScoped<IContactService, ContactService>();
+builder.Services.AddScoped<ICategoriesService, CategoriesService>();
 builder.Services.AddSingleton<JwtHelper>();
 
 builder.Services.AddMemoryCache();
