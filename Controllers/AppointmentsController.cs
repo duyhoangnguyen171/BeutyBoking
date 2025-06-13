@@ -14,7 +14,7 @@ namespace BookingSalonHair.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+    //[Authorize]
     public class AppointmentsController : ControllerBase
     {
         private readonly SalonContext _context;
@@ -492,6 +492,59 @@ namespace BookingSalonHair.Controllers
 
             return Ok(new { message = "Đã gửi nhắc lịch thành công đến khách hàng." });
         }
+        [HttpGet("statistics")]
+        public async Task<IActionResult> GetAppointmentStatistics([FromQuery] string type = "day")
+        {
+            if (type != "day" && type != "month" && type != "week")
+            {
+                return BadRequest("Type must be either 'day', 'month', or 'week'.");
+            }
+
+            var appointments = await _context.Appointments.ToListAsync();
+
+            var result = type switch
+            {
+                "day" => appointments
+                    .GroupBy(a => a.AppointmentDate.Date)
+                    .OrderBy(g => g.Key)
+                    .Select(g => new AppointmentStatisticsDto
+                    {
+                        Label = g.Key.ToString("yyyy-MM-dd"),
+                        Count = g.Count()
+                    })
+                    .ToList(),
+
+                "month" => appointments
+                    .GroupBy(a => new { a.AppointmentDate.Year, a.AppointmentDate.Month })
+                    .OrderBy(g => g.Key.Year).ThenBy(g => g.Key.Month)
+                    .Select(g => new AppointmentStatisticsDto
+                    {
+                        Label = $"{g.Key.Year}-{g.Key.Month:D2}",
+                        Count = g.Count()
+                    })
+                    .ToList(),
+
+                "week" => appointments
+                    .GroupBy(a =>
+                    {
+                        var cal = System.Globalization.CultureInfo.InvariantCulture.Calendar;
+                        var week = cal.GetWeekOfYear(a.AppointmentDate, System.Globalization.CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
+                        return new { a.AppointmentDate.Year, Week = week };
+                    })
+                    .OrderBy(g => g.Key.Year).ThenBy(g => g.Key.Week)
+                    .Select(g => new AppointmentStatisticsDto
+                    {
+                        Label = $"Week {g.Key.Week:D2}, {g.Key.Year}",
+                        Count = g.Count()
+                    })
+                    .ToList(),
+
+                _ => new List<AppointmentStatisticsDto>()
+            };
+
+            return Ok(result);
+        }
+
 
         private string GetStatusText(AppointmentStatus status)
         {

@@ -50,11 +50,14 @@ namespace BookingSalonHair.Controllers
         }
 
         // PUT: api/news
-        [HttpPut]
-        public async Task<IActionResult> Update([FromBody] NewsUpdateDto dto)
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(int id, [FromBody] NewsUpdateDto dto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
+
+            if (id != dto.Id)
+                return BadRequest("ID trên route và trong body không khớp.");
 
             var updatedNews = await _newsService.UpdateAsync(dto);
             if (updatedNews == null)

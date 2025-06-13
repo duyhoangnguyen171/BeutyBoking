@@ -23,7 +23,7 @@ namespace BookingSalonHair.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "admin,staff,customer")]
+        //[Authorize(Roles = "admin,staff,customer")]
         public async Task<ActionResult<IEnumerable<WorkShift>>> GetWorkShifts()
         {
             var workShifts = await _context.WorkShifts.AsNoTracking().ToListAsync();
@@ -155,17 +155,42 @@ namespace BookingSalonHair.Controllers
             return Ok(new { message = $"Ca làm '{existingWorkShift.Name}' đã được cập nhật thành công.", workShift = existingWorkShift });
         }
         [HttpDelete("{id}")]
-        [Authorize(Roles = "admin")]
+        //[Authorize(Roles = "admin")]
         public async Task<IActionResult> DeleteWorkShift(int id)
         {
-            var workShift = await _context.WorkShifts.FindAsync(id);
-            if (workShift == null) return NotFound();
+            var workShift = await _context.WorkShifts
+                .Include(ws => ws.TimeSlots)
+                .FirstOrDefaultAsync(ws => ws.Id == id);
 
+            if (workShift == null)
+                return NotFound();
+
+            var timeSlotIds = workShift.TimeSlots.Select(ts => ts.Id).ToList();
+
+            var hasAppointments = await _context.Appointments
+                .AnyAsync(a => timeSlotIds.Contains(a.StaffTimeSlot.TimeSlotId));
+
+            if (hasAppointments)
+                return BadRequest("Không thể xóa vì một hoặc nhiều ca làm vẫn có lịch hẹn.");
+
+            // Xóa StaffTimeSlots
+            var staffTimeSlots = await _context.StaffTimeSlots
+                .Where(st => timeSlotIds.Contains(st.TimeSlotId))
+                .ToListAsync();
+            _context.StaffTimeSlots.RemoveRange(staffTimeSlots);
+
+            // Xóa TimeSlots
+            _context.TimeSlots.RemoveRange(workShift.TimeSlots);
+
+            // Xóa WorkShift
             _context.WorkShifts.Remove(workShift);
+
             await _context.SaveChangesAsync();
 
             return NoContent();
         }
+
+
 
         [HttpPost("with-time-slots")]
         [Authorize(Roles = "admin")]

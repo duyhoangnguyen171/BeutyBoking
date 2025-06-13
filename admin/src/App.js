@@ -10,6 +10,8 @@ import "react-toastify/dist/ReactToastify.css";
 
 import AdminPanel from "./component/common/AdminPanel";
 import PrivateRoute from "./component/common/PrivateRoute";
+import Dashboard  from "./modules/dashboards/Dashboard";
+import AppointmentsChart  from "./modules/charts/AppointmentsChart";
 
 import Appointment from "./modules/appointments/Appointment";
 import LoginForm from "./modules/auth/LoginForm";
@@ -18,6 +20,10 @@ import New from "./modules/news/New";
 import Service from "./modules/services/Service";
 import Users from "./modules/users/Users";
 import WorkShift from "./modules/workshifts/WorkShift";
+
+import NewsAdd from "./modules/news/NewsAdd";
+import NewsEdit from "./modules/news/NewsEdit";
+
 
 import UserAdd from "./modules/users/UserAdd";
 import UserAppointmentHistory from "./modules/users/UserAppointmentHistory";
@@ -48,11 +54,16 @@ const App = () => {
           {/* Admin routes */}
           <Route element={<PrivateRoute allowedRole="admin" />}>
             <Route path="/admin" element={<AdminPanel />}>
+            <Route path="dashboards" element={<Dashboard />} />
+             <Route path="appointmentscharts" element={<AppointmentsChart />} />
+
               <Route path="users" element={<Users />} />
               <Route path="appointments" element={<Appointment />} />
               <Route path="services" element={<Service />} />
               <Route path="contact" element={<Contact />} />
               <Route path="news" element={<New />} />
+              <Route path="newsadd" element={<NewsAdd />} />
+              <Route path="newsedit" element={<NewsEdit />} />
               <Route path="workshifts" element={<WorkShift />} />
               <Route path="users/add" element={<UserAdd />} />
               <Route path="users/edit" element={<UserEdit />} />

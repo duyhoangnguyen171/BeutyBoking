@@ -90,5 +90,26 @@ namespace BookingSalonHair.Controllers
             await _context.SaveChangesAsync();
             return NoContent();
         }
+        [HttpGet("popular-services")]
+        public async Task<IActionResult> GetPopularServices()
+        {
+            var result = await _context.AppointmentServices
+                .GroupBy(a => a.ServiceId)
+                .Select(g => new {
+                    ServiceId = g.Key,
+                    Count = g.Count()
+                })
+                .OrderByDescending(x => x.Count)
+                .Join(_context.Services,
+                    x => x.ServiceId,
+                    s => s.Id,
+                    (x, s) => new {
+                        name = s.Name,
+                        count = x.Count
+                    })
+                .ToListAsync();
+
+            return Ok(result);
+        }
     }
 }

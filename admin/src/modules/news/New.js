@@ -17,8 +17,9 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 // import "../../asset/styles/new/new.css"; // Giả định bạn có file CSS riêng cho News
 import NewService from "../../services/NewService";
-// import NewsAdd from "./NewsAdd";
-// import NewsEdit from "./NewsEdit";
+import NewsAdd from "./NewsAdd";
+import NewsEdit from "./NewsEdit";
+import { Avatar } from "@mui/material"; // nhớ chắc chắn đã import Avatar
 
 const News = () => {
   const [news, setNews] = useState([]);
@@ -128,7 +129,11 @@ const News = () => {
     page * rowsPerPage
   );
   const totalPages = Math.ceil(filteredNews.length / rowsPerPage);
-
+  const stripHtml = (html) => {
+    const tmp = document.createElement("div");
+    tmp.innerHTML = html;
+    return tmp.textContent || tmp.innerText || "";
+  };
   return (
     <div>
       <h1>Tin tức</h1>
@@ -145,14 +150,14 @@ const News = () => {
           size="small"
         />
       </Stack>
-      {/* <NewsAdd
+      <NewsAdd
         open={openAdd}
         onClose={handleCloseAdd}
         onSuccess={() => {
           loadNews();
           handleCloseAdd();
         }}
-      /> */}
+      />
 
       <TableContainer component={Paper} style={{ marginTop: "20px" }}>
         <Table>
@@ -172,19 +177,25 @@ const News = () => {
                 <TableRow key={newsItem.id}>
                   <TableCell>{newsItem.id}</TableCell>
                   <TableCell>
-                    {newsItem.imageUrl && (
-                      <img
-                        src={newsItem.imageUrl}
-                        className="table-image"
+                    {newsItem.imageurl && (
+                      <Avatar
+                        src={newsItem.imageurl}
                         alt={newsItem.title}
+                        variant="rounded"
+                        sx={{
+                          width: 60,
+                          height: 60,
+                          border: "2px solid #e5e7eb", // giống như viền màu xám nhạt
+                          objectFit: "cover",
+                        }}
                       />
                     )}
                   </TableCell>
                   <TableCell>{newsItem.title}</TableCell>
                   <TableCell>
-                    {newsItem.content.length > 100
-                      ? `${newsItem.content.substring(0, 100)}...`
-                      : newsItem.content}
+                    {stripHtml(newsItem.content).length > 100
+                      ? `${stripHtml(newsItem.content).substring(0, 100)}...`
+                      : stripHtml(newsItem.content)}
                   </TableCell>
                   <TableCell>
                     {new Date(newsItem.createdAt).toLocaleDateString()}
@@ -241,7 +252,7 @@ const News = () => {
           boundaryCount={1}
         />
       )}
-{/* 
+
       <NewsEdit
         open={openEdit}
         onClose={() => setOpenEdit(false)}
@@ -250,7 +261,7 @@ const News = () => {
           loadNews();
           setOpenEdit(false);
         }}
-      /> */}
+      />
 
       <Modal open={openView} onClose={handleCloseView}>
         <div

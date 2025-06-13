@@ -274,6 +274,23 @@ namespace BookingSalonHair.Controllers
 
             return Ok(result);
         }
+        [HttpGet("top-returning-customers")]
+        public IActionResult GetTopReturningCustomers()
+        {
+            var result = _context.Appointments
+                .Where(a => a.CustomerId != null)
+                .GroupBy(a => a.Customer.FullName)
+                .Select(g => new {
+                    FullName = g.Key,
+                    Visits = g.Count()
+                })
+                .OrderByDescending(x => x.Visits)
+                .Take(5)
+                .ToList();
+
+            return Ok(result);
+        }
+
         private string GetStatusText(AppointmentStatus status)
         {
             return status switch

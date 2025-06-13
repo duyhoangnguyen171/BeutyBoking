@@ -125,6 +125,28 @@ const AppointmentService = {
         );
         throw err;
       }),
+   getAppointmentStatistics : (type) =>
+  api
+    .get(`/appointments/statistics?type=${type}`)
+    .then((res) => {
+      return res.data.$values.map((item) => ({
+        // Đổi key nếu cần để phù hợp với biểu đồ
+        date: item.label, // khi type=day
+        week: item.label, // khi type=week
+        month: item.label, // khi type=month
+        count: item.count,
+      }));
+    }),
+    getBookedSlotIdsByStaffAndDate: async (staffId, date) => {
+    try {
+      const response = await api.get(`/appointments/staff/${staffId}/date/${date}`, getAuthHeader());
+      const appointments = response.data?.$values || response.data || [];
+      return appointments.map(a => a.staffTimeSlotId);
+    } catch (err) {
+      console.error(`Lỗi khi lấy booked slot cho staff ${staffId} và ngày ${date}:`, err.response || err);
+      throw err;
+    }
+  },
 };
 
 export default AppointmentService;

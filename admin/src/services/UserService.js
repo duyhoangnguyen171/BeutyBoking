@@ -135,3 +135,8 @@ export const getAppointmentHistory = async (userId) => {
       throw error;
     }
   };
+export const getTopReturningCustomers = () => {
+  return axios
+    .get(`${API_URL}/top-returning-customers`, authHeader())
+    .then(res => res.data);
+};

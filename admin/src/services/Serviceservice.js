@@ -49,6 +49,7 @@ const ServiceService = {
   create: (serviceData) => api.post("/services", serviceData, getAuthHeader()),
   update: (id, serviceData) => api.put(`/services/${id}`, serviceData, getAuthHeader()),
   delete: (id) => api.delete(`/services/${id}`, getAuthHeader()),
+  getPopularServices: () => api.get("/services/popular-services", getAuthHeader()),
 };
 
 export default ServiceService;

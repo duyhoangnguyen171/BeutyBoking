@@ -19,7 +19,7 @@ namespace BookingSalonHair.Controllers
             _context = context;
         }
 
-        // POST: api/StaffTimeSlotss
+        //[POST("api/StaffTimeSlotss")]
         [HttpPost]
         public async Task<IActionResult> RegisterStaffTimeSlots([FromBody] RegisterStaffTimeSlotDto dto)
         {

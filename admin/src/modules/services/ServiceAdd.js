@@ -10,7 +10,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import CategoriesService from "../../services/CategoriesService ";
+import CategoriesService from "../../services/CategoriesService";
 import ServiceService from "../../services/Serviceservice";
 import { uploadFile } from "../../utils/uploadfile";
 import { CKEditor } from "@ckeditor/ckeditor5-react";
@@ -32,7 +32,7 @@ const ServiceAdd = ({ open, onClose, onSuccess }) => {
     const fetchCategories = async () => {
       try {
         const response = await CategoriesService.getAll(); // API lấy danh sách categories
-        const categoriesData = response?.$values || []; // Truy cập vào $values nếu có
+        const categoriesData = response || []; // Truy cập vào $values nếu có
         setCategories(categoriesData); // Lưu danh sách danh mục
       } catch (error) {
         console.error("Lỗi khi lấy danh mục:", error);

@@ -20,8 +20,10 @@ const UserAdd = ({ open, onClose, onSuccess }) => {
     phone: "",
     role: "",
   });
+
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [errors, setErrors] = useState({});
 
   const roles = ["Admin", "Staff", "Customer"];
 
@@ -31,33 +33,36 @@ const UserAdd = ({ open, onClose, onSuccess }) => {
       ...prevData,
       [name]: value,
     }));
-    setErrorMessage(""); // Clear error message on change
+    setErrors((prevErrors) => ({
+      ...prevErrors,
+      [name]: "", // Clear error of this field
+    }));
+    setErrorMessage(""); // Clear general error
   };
 
   const validateForm = () => {
-    if (!formData.fullName) return "Họ tên là bắt buộc.";
-    if (!formData.email) return "Email là bắt buộc.";
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) return "Email không hợp lệ.";
-    if (!formData.password) return "Mật khẩu là bắt buộc.";
-    if (formData.password.length < 6) return "Mật khẩu phải dài ít nhất 6 ký tự.";
-    if (formData.phone && !/^\d{10,11}$/.test(formData.phone)) return "Số điện thoại không hợp lệ (10-11 chữ số).";
-    if (!formData.role) return "Vai trò là bắt buộc.";
-    return "";
+    const newErrors = {};
+    if (!formData.fullName) newErrors.fullName = "Họ tên là bắt buộc.";
+    if (!formData.email) newErrors.email = "Email là bắt buộc.";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
+      newErrors.email = "Email không hợp lệ.";
+    if (!formData.password) newErrors.password = "Mật khẩu là bắt buộc.";
+    else if (formData.password.length < 6)
+      newErrors.password = "Mật khẩu phải dài ít nhất 6 ký tự.";
+    if (formData.phone && !/^\d{10,11}$/.test(formData.phone))
+      newErrors.phone = "Số điện thoại không hợp lệ (10-11 chữ số).";
+    if (!formData.role) newErrors.role = "Vai trò là bắt buộc.";
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const validationError = validateForm();
-    if (validationError) {
-      setErrorMessage(validationError);
-      toast.error(validationError, {
+    if (!validateForm()) {
+      toast.error("Vui lòng kiểm tra lại các trường nhập.", {
         position: "top-right",
         autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
       });
       return;
     }
@@ -68,11 +73,6 @@ const UserAdd = ({ open, onClose, onSuccess }) => {
       toast.success("Thêm người dùng thành công!", {
         position: "top-right",
         autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
       });
       onSuccess();
       setFormData({
@@ -82,20 +82,23 @@ const UserAdd = ({ open, onClose, onSuccess }) => {
         phone: "",
         role: "",
       });
+      setErrors({});
+      setErrorMessage("");
       onClose();
     } catch (error) {
       console.error("Lỗi khi thêm người dùng:", error);
       const errorMsg = error.response?.data?.message || "Thêm người dùng thất bại.";
-      setErrorMessage(errorMsg);
-      toast.error(errorMsg, {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-      });
+
+      // Nếu lỗi liên quan đến email
+      if (errorMsg.toLowerCase().includes("email")) {
+        setErrors((prev) => ({ ...prev, email: errorMsg }));
+      } else {
+        setErrorMessage(errorMsg);
+        toast.error(errorMsg, {
+          position: "top-right",
+          autoClose: 3000,
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -140,6 +143,8 @@ const UserAdd = ({ open, onClose, onSuccess }) => {
               margin="normal"
               required
               disabled={loading}
+              error={!!errors.fullName}
+              helperText={errors.fullName}
             />
             <TextField
               label="Email"
@@ -151,6 +156,8 @@ const UserAdd = ({ open, onClose, onSuccess }) => {
               margin="normal"
               required
               disabled={loading}
+              error={!!errors.email}
+              helperText={errors.email}
             />
             <TextField
               label="Mật khẩu"
@@ -162,6 +169,8 @@ const UserAdd = ({ open, onClose, onSuccess }) => {
               margin="normal"
               required
               disabled={loading}
+              error={!!errors.password}
+              helperText={errors.password}
             />
             <TextField
               label="Số điện thoại"
@@ -171,6 +180,8 @@ const UserAdd = ({ open, onClose, onSuccess }) => {
               fullWidth
               margin="normal"
               disabled={loading}
+              error={!!errors.phone}
+              helperText={errors.phone}
             />
             <TextField
               select
@@ -182,6 +193,8 @@ const UserAdd = ({ open, onClose, onSuccess }) => {
               margin="normal"
               required
               disabled={loading}
+              error={!!errors.role}
+              helperText={errors.role}
             >
               {roles.map((role) => (
                 <MenuItem key={role} value={role}>
@@ -210,17 +223,7 @@ const UserAdd = ({ open, onClose, onSuccess }) => {
           </form>
         </Box>
       </Modal>
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-      />
+      <ToastContainer />
     </>
   );
 };

@@ -57,27 +57,22 @@ namespace SalonBooking.API.Data
             modelBuilder.Entity<StaffTimeSlot>()
             .Property(st => st.Id)
             .ValueGeneratedOnAdd();
-            modelBuilder.Entity<StaffTimeSlot>()
-            .HasIndex(x => new { x.StaffId, x.TimeSlotId })
-            .IsUnique();
+           
 
             modelBuilder.Entity<StaffTimeSlot>()
                 .HasOne(st => st.Staff)
                 .WithMany()
                 .HasForeignKey(st => st.StaffId)
                 .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<StaffTimeSlot>()
+    .HasIndex(x => new { x.StaffId, x.TimeSlotId })
+    .IsUnique();
 
             modelBuilder.Entity<StaffTimeSlot>()
-                .HasOne(st => st.TimeSlot)
-                .WithMany()
-                .HasForeignKey(st => st.TimeSlotId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<StaffTimeSlot>()
-                .HasOne(st => st.WorkShift)
-                .WithMany()
-                .HasForeignKey(st => st.WorkShiftId)
-                .OnDelete(DeleteBehavior.Cascade); // Chỉ cascade một chiều duy nhất
+    .HasOne(st => st.TimeSlot)
+    .WithMany()
+    .HasForeignKey(st => st.TimeSlotId)
+    .OnDelete(DeleteBehavior.Restrict);
 
             // WorkShift - Appointment
             modelBuilder.Entity<Appointment>()

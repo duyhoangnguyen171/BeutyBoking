@@ -8,19 +8,47 @@ import {
   Stack,
   TextField,
   Typography,
+  Box,
+  Card,
+  CardContent,
+  Chip,
+  IconButton,
+  Tooltip,
+  Grid,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-// import "../../asset/styles/appointment/appointment.css";
+import { 
+  Calendar, 
+  Clock, 
+  User, 
+  Users, 
+  Search, 
+  Plus, 
+  Filter, 
+  Trash2, 
+  Edit, 
+  Eye, 
+  MessageCircle,
+  CalendarCheck,
+  AlertCircle,
+  CheckCircle,
+  XCircle
+} from "lucide-react";
+import { useSnackbar } from "notistack";
 import AppointmentService from "../../services/AppointmentService";
 import ServiceService from "../../services/Serviceservice";
 import * as UserService from "../../services/UserService";
 import AppointmentAdd from "./AppointmentAdd";
 import AppointmentDetail from "./AppointmentDetail";
 import AppointmentEdit from "./AppointmentEdit";
-import { useSnackbar } from "notistack";
+
 const resolveReferences = (data, cache = new Map()) => {
   if (!data) return [];
   if (typeof data !== "object") return data;
@@ -71,6 +99,7 @@ const Appointment = () => {
   const rowsPerPage = 10;
   const [reloadKey, setReloadKey] = useState(0);
   const { enqueueSnackbar } = useSnackbar();
+
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const pageParam = parseInt(params.get("page"), 10);
@@ -80,254 +109,450 @@ const Appointment = () => {
     setSearchTerm("");
   }, [location.search, totalPages]);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [appointmentRes, serviceRes, userRes] = await Promise.all([
-          AppointmentService.getAll({ page, pageSize: rowsPerPage }),
-          ServiceService.getAll(),
-          UserService.getUsers(),
-        ]);
-
-        const appointmentData = appointmentRes.data.data
-          ? resolveReferences(appointmentRes.data.data)
-          : resolveReferences(appointmentRes.data) || [];
-
-        appointmentData.forEach((app) => {
-          if (app.appointmentServices?.length > 0) {
-            app.serviceNames = app.appointmentServices
-              .map((s) => s.serviceName)
-              .join(", ");
-          } else if (app.serviceIds?.$values) {
-            const ids = app.serviceIds.$values.map((s) =>
-              typeof s === "object" ? s.id : s
-            );
-            app.serviceNames = services
-              .filter((s) => ids.includes(s.id))
-              .map((s) => s.name)
-              .join(", ");
-          } else {
-            app.serviceNames = "Không có dịch vụ";
-          }
-        });
-
-        setAppointments(appointmentData);
-        setTotalPages(appointmentRes.data.totalPages || 1);
-        setServices(serviceRes.data.$values || serviceRes.data || []);
-        setCustomers(userRes.$values || userRes.data || []);
-        setStaffs(userRes.$values || userRes.data || []);
-        setLoading(false);
-      } catch (err) {
-        console.error("Lỗi khi tải dữ liệu:", err);
-        setError("Không thể tải dữ liệu");
-        toast.error("Lỗi khi tải dữ liệu lịch hẹn hoặc dịch vụ.");
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, [page, reloadKey]);
-  const handleRemind = async (id) => {
+useEffect(() => {
+  const fetchData = async () => {
     try {
-      await AppointmentService.remindAppointment(id);
-      enqueueSnackbar("Đã gửi nhắc lịch thành công.", { variant: "success" });
-    } catch (err) {
-      enqueueSnackbar("Gửi nhắc lịch thất bại.", { variant: "error" });
-    }
-  };
-  useEffect(() => {
-    let filtered = [...appointments].filter((app) => app.status !== 4);
+      setLoading(true);
+      const [appointmentRes, serviceRes, userRes] = await Promise.all([
+        AppointmentService.getAll({ page, pageSize: rowsPerPage }),
+        ServiceService.getAll(),
+        UserService.getUsers(),
+      ]);
 
-    if (searchTerm) {
-      filtered = filtered.filter((app) => {
-        const customerName = app.customerFullName || "";
-        return customerName.toLowerCase().includes(searchTerm.toLowerCase());
+      const appointmentData = appointmentRes.data.data
+        ? resolveReferences(appointmentRes.data.data)
+        : resolveReferences(appointmentRes.data) || [];
+
+      appointmentData.forEach((app) => {
+        if (app.appointmentServices?.length > 0) {
+          app.serviceNames = app.appointmentServices
+            .map((s) => s.serviceName)
+            .join(", ");
+        } else if (app.serviceIds?.$values) {
+          const ids = app.serviceIds.$values.map((s) =>
+            typeof s === "object" ? s.id : s
+          );
+          app.serviceNames = services
+            .filter((s) => ids.includes(s.id))
+            .map((s) => s.name)
+            .join(", ");
+        } else {
+          app.serviceNames = "Không có dịch vụ";
+        }
       });
-    }
 
-    filtered.sort((a, b) => {
-      const dateA = new Date(a.appointmentDate);
-      const dateB = new Date(b.appointmentDate);
-      return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
-    });
-
-    setFilteredAppointments(filtered);
-    if (filtered.length === 0 && page < totalPages) setPage(page + 1);
-  }, [searchTerm, sortOrder, appointments, page, totalPages]);
-
-  const handleCancel = (appointmentId) => {
-    setSelectedAppointmentId(appointmentId);
-    setOpenCancelDialog(true);
-  };
-
-  const confirmCancel = async () => {
-    try {
-      await AppointmentService.updateStatus(selectedAppointmentId, 4);
-      toast.success("Lịch hẹn đã được đưa vào thùng rác.");
-      setAppointments((prev) =>
-        prev.map((app) =>
-          app.id === selectedAppointmentId ? { ...app, status: 4 } : app
-        )
-      );
-      setOpenCancelDialog(false);
-      setSelectedAppointmentId(null);
+      setAppointments(appointmentData);
+      if (appointmentRes.data.currentPage && appointmentRes.data.currentPage !== page) {
+        setPage(appointmentRes.data.currentPage);
+      }
+      setTotalPages(appointmentRes.data.totalPages || 1);
+      setServices(serviceRes.data.$values || serviceRes.data || []);
+      setCustomers(userRes.$values || userRes.data || []);
+      setStaffs(userRes.$values || userRes.data || []);
     } catch (err) {
-      console.error("Lỗi khi hủy lịch:", err);
-      toast.error("Không thể hủy lịch hẹn.");
+      console.error("Lỗi khi tải dữ liệu:", err);
+      setError("Không thể tải dữ liệu");
+      toast.error("Lỗi khi tải dữ liệu lịch hẹn hoặc dịch vụ.");
+    } finally {
+      setLoading(false);
     }
   };
+  fetchData();
+}, [page, reloadKey]);
 
-  const handleCancelDialogClose = () => {
+useEffect(() => {
+  let filtered = [...appointments].filter((app) => app.status !== 4);
+
+  if (searchTerm) {
+    filtered = filtered.filter((app) => {
+      const customerName = app.customerFullName || "";
+      return customerName.toLowerCase().includes(searchTerm.toLowerCase());
+    });
+  }
+
+  filtered.sort((a, b) => b.appointmentId - a.appointmentId);
+
+  setFilteredAppointments(filtered);
+}, [appointments, searchTerm]);
+const confirmCancel = async () => {
+  try {
+    await AppointmentService.updateStatus(selectedAppointmentId, 4);
+    toast.success("Lịch hẹn đã được đưa vào thùng rác.");
+    
+    setReloadKey(prev => prev + 1);
+    
     setOpenCancelDialog(false);
     setSelectedAppointmentId(null);
+  } catch (err) {
+    console.error("Lỗi khi hủy lịch:", err);
+    toast.error("Không thể hủy lịch hẹn.");
+  }
+};
+
+const handleStatusChange = async (appointmentId, newStatus) => {
+  try {
+    await AppointmentService.updateStatus(appointmentId, newStatus);
+    
+    setReloadKey(prev => prev + 1);
+    
+    toast.success("Cập nhật trạng thái thành công!");
+  } catch (error) {
+    toast.error("Không thể cập nhật trạng thái.");
+  }
+};
+
+const handleRemind = async (id) => {
+  try {
+    await AppointmentService.remindAppointment(id);
+    enqueueSnackbar("Đã gửi nhắc lịch thành công.", { variant: "success" });
+  } catch (err) {
+    enqueueSnackbar("Gửi nhắc lịch thất bại.", { variant: "error" });
+  }
+};
+
+const handleCancel = (appointmentId) => {
+  setSelectedAppointmentId(appointmentId);
+  setOpenCancelDialog(true);
+};
+
+const handleCancelDialogClose = () => {
+  setOpenCancelDialog(false);
+  setSelectedAppointmentId(null);
+};
+
+  const getStatusInfo = (status) => {
+    const statusMap = {
+      0: { label: "Mới tạo", color: "default", icon: <AlertCircle size={16} /> },
+      1: { label: "Chờ xác nhận", color: "warning", icon: <Clock size={16} /> },
+      2: { label: "Đã xác nhận", color: "success", icon: <CheckCircle size={16} /> },
+      3: { label: "Hoàn thành", color: "primary", icon: <CalendarCheck size={16} /> },
+      4: { label: "Hủy", color: "error", icon: <XCircle size={16} /> }
+    };
+    return statusMap[status] || statusMap[0];
   };
 
-  const handleStatusChange = async (appointmentId, newStatus) => {
-    try {
-      await AppointmentService.updateStatus(appointmentId, newStatus);
-      setAppointments((prev) =>
-        prev.map((app) =>
-          app.id === appointmentId ? { ...app, status: newStatus } : app
-        )
-      );
-      toast.success("Cập nhật trạng thái thành công!");
-    } catch (error) {
-      toast.error("Không thể cập nhật trạng thái.");
+  const statsData = [
+    {
+      title: "Mới tạo",
+      count: appointments.filter(a => a.status === 0).length,
+      color: "default",
+      icon: <AlertCircle size={24} />
+    },
+    {
+      title: "Chờ xác nhận", 
+      count: appointments.filter(a => a.status === 1).length,
+      color: "warning",
+      icon: <Clock size={24} />
+    },
+    {
+      title: "Đã xác nhận",
+      count: appointments.filter(a => a.status === 2).length, 
+      color: "success",
+      icon: <CheckCircle size={24} />
+    },
+    {
+      title: "Hoàn thành",
+      count: appointments.filter(a => a.status === 3).length,
+      color: "primary", 
+      icon: <CalendarCheck size={24} />
     }
-  };
+  ];
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+        <Typography>Đang tải dữ liệu...</Typography>
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+        <Typography color="error">{error}</Typography>
+      </Box>
+    );
+  }
 
   return (
-    <div className="container mt-4">
-      <h2 className="mb-4">Danh sách cuộc hẹn</h2>
-      <Stack direction="row" spacing={2} className="mb-4">
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={() => setOpenAddDialog(true)}
-        >
-          Thêm lịch hẹn
-        </Button>
-        <TextField
-          label="Tìm kiếm khách hàng"
-          variant="outlined"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          size="small"
-        />
-        <Button
-          variant="contained"
-          onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
-        >
-          Sắp xếp ({sortOrder === "asc" ? "Tăng" : "Giảm"})
-        </Button>
-        <Button
-          variant="contained"
-          color="secondary"
-          component={Link}
-          to="/admin/appointments/canceled"
-        >
-          Thùng rác
-        </Button>
-      </Stack>
+    <Box sx={{ p: 3, backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
+      {/* Header */}
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Box display="flex" justifyContent="space-between" alignItems="flex-start" flexWrap="wrap" gap={2}>
+            <Box>
+              <Typography variant="h4" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Calendar size={32} />
+                Quản lý lịch hẹn
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Quản lý và theo dõi tất cả các cuộc hẹn
+              </Typography>
+            </Box>
+            
+            <Box display="flex" gap={2}>
+              <Button
+                variant="contained"
+                startIcon={<Plus size={20} />}
+                onClick={() => setOpenAddDialog(true)}
+                sx={{ textTransform: 'none' }}
+              >
+                Thêm lịch hẹn
+              </Button>
+              <Button
+                variant="outlined"
+                component={Link}
+                to="/admin/appointments/canceled"
+                startIcon={<Trash2 size={20} />}
+                sx={{ textTransform: 'none' }}
+              >
+                Thùng rác
+              </Button>
+            </Box>
+          </Box>
+        </CardContent>
+      </Card>
 
-      {loading ? (
-        <div>Đang tải dữ liệu...</div>
-      ) : error ? (
-        <div style={{ color: "red" }}>{error}</div>
-      ) : filteredAppointments.length === 0 ? (
-        <div>Không có cuộc hẹn nào.</div>
+      {/* Stats Cards */}
+      <Grid container spacing={3} sx={{ mb: 3 }}>
+        {statsData.map((stat, index) => (
+          <Grid item xs={12} sm={6} md={3} key={index}>
+            <Card>
+              <CardContent>
+                <Box display="flex" justifyContent="space-between" alignItems="center">
+                  <Box>
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      {stat.title}
+                    </Typography>
+                    <Typography variant="h4" fontWeight="bold">
+                      {stat.count}
+                    </Typography>
+                  </Box>
+                  <Box
+                    sx={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: '12px',
+                      backgroundColor: `${stat.color === 'default' ? 'grey' : stat.color}.100`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: `${stat.color === 'default' ? 'grey' : stat.color}.600`
+                    }}
+                  >
+                    {stat.icon}
+                  </Box>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+
+      {/* Filters */}
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
+            <TextField
+              label="Tìm kiếm khách hàng"
+              variant="outlined"
+              size="small"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              InputProps={{
+                startAdornment: <Search size={20} style={{ marginRight: 8, color: '#666' }} />
+              }}
+              sx={{ minWidth: 250 }}
+            />
+            <Button
+              variant="outlined"
+              onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+              startIcon={<Filter size={20} />}
+              sx={{ textTransform: 'none' }}
+            >
+              Sắp xếp ({sortOrder === "asc" ? "Tăng" : "Giảm"})
+            </Button>
+            <Typography variant="body2" color="text.secondary">
+              Tổng: <strong>{filteredAppointments.length}</strong> lịch hẹn
+            </Typography>
+          </Stack>
+        </CardContent>
+      </Card>
+
+      {/* Main Content */}
+      {filteredAppointments.length === 0 ? (
+        <Card>
+          <CardContent sx={{ textAlign: 'center', py: 8 }}>
+            <Calendar size={64} style={{ color: '#ccc', marginBottom: 16 }} />
+            <Typography variant="h6" gutterBottom>
+              Không có lịch hẹn nào
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Chưa có lịch hẹn nào được tạo hoặc không khớp với bộ lọc của bạn.
+            </Typography>
+            <Button
+              variant="contained"
+              startIcon={<Plus size={20} />}
+              onClick={() => setOpenAddDialog(true)}
+              sx={{ textTransform: 'none' }}
+            >
+              Tạo lịch hẹn đầu tiên
+            </Button>
+          </CardContent>
+        </Card>
       ) : (
         <>
-          <table className="table table-striped">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Khách hàng</th>
-                <th>Nhân viên</th>
-                <th>Thời gian</th>
-                <th>Dịch vụ</th>
-                <th>Trạng thái</th>
-                <th>Hành động</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredAppointments.map((app, index) => (
-                <tr key={app.id}>
-                  <td>{(page - 1) * rowsPerPage + index + 1}</td>
-                  <td>{app.customerFullName}</td>
-                  <td>{app.staffFullName}</td>
-                  <td>
-                    {new Date(app.appointmentDate).toLocaleString("vi-VN")}
-                  </td>
-                  <td>{app.serviceNames || "Không có dịch vụ"}</td>
-                  <td>
-                    <select
-                      value={app.status}
-                      onChange={(e) =>
-                        handleStatusChange(app.id, parseInt(e.target.value))
-                      }
-                    >
-                      <option value={0}>Mới tạo</option>
-                      <option value={1}>Chờ xác nhận</option>
-                      <option value={2}>Đã xác nhận</option>
-                      <option value={3}>Hoàn thành</option>
-                      <option value={4}>Hủy</option>
-                    </select>
-                  </td>
-                  <td>
-                    <Button
-                      size="small"
-                      color="info"
-                      onClick={() => {
-                        setSelectedAppointment(app);
-                        setOpenViewDialog(true);
-                      }}
-                    >
-                      Xem
-                    </Button>
-                    <Button
-                      size="small"
-                      color="warning"
-                      onClick={() => {
-                        setSelectedAppointment(app);
-                        setOpenEditDialog(true);
-                      }}
-                    >
-                      Sửa
-                    </Button>
-                    <Button
-                      size="small"
-                      color="error"
-                      onClick={() => handleCancel(app.id)}
-                    >
-                      Hủy
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      color="primary"
-                      size="small"
-                      onClick={() => handleRemind(app.id)}
-                    >
-                      Nhắc lịch
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <Pagination
-            count={totalPages}
-            page={page}
-            onChange={(e, val) => setPage(val)}
-          />
+          <Card>
+            <Box sx={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ backgroundColor: '#f5f5f5' }}>
+                    <th style={{ padding: '16px', textAlign: 'left', fontWeight: 600 }}>#</th>
+                    <th style={{ padding: '16px', textAlign: 'left', fontWeight: 600 }}>Khách hàng</th>
+                    <th style={{ padding: '16px', textAlign: 'left', fontWeight: 600 }}>Nhân viên</th>
+                    <th style={{ padding: '16px', textAlign: 'left', fontWeight: 600 }}>Thời gian</th>
+                    <th style={{ padding: '16px', textAlign: 'left', fontWeight: 600 }}>Dịch vụ</th>
+                    <th style={{ padding: '16px', textAlign: 'left', fontWeight: 600 }}>Trạng thái</th>
+                    <th style={{ padding: '16px', textAlign: 'left', fontWeight: 600 }}>Hành động</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredAppointments.map((app, index) => {
+                    const statusInfo = getStatusInfo(app.status);
+                    return (
+                      <tr key={app.id} style={{ borderBottom: '1px solid #eee' }}>
+                        <td style={{ padding: '16px' }}>
+                          <Typography variant="body2" fontWeight={500}>
+                            {(page - 1) * rowsPerPage + index + 1}
+                          </Typography>
+                        </td>
+                        <td style={{ padding: '16px' }}>
+                          <Box display="flex" alignItems="center" gap={1}>
+                            <Box
+                              sx={{
+                                width: 32,
+                                height: 32,
+                                borderRadius: '50%',
+                                backgroundColor: 'primary.100',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                              }}
+                            >
+                              <User size={16} />
+                            </Box>
+                            <Typography variant="body2" fontWeight={500}>
+                              {app.customerFullName}
+                            </Typography>
+                          </Box>
+                        </td>
+                        <td style={{ padding: '16px' }}>
+                          <Box display="flex" alignItems="center" gap={1}>
+                            <Users size={16} />
+                            <Typography variant="body2">
+                              {app.staffFullName}
+                            </Typography>
+                          </Box>
+                        </td>
+                        <td style={{ padding: '16px' }}>
+                          <Box display="flex" alignItems="center" gap={1}>
+                            <Clock size={16} />
+                            <Typography variant="body2">
+                              {new Date(app.appointmentDate).toLocaleString("vi-VN")}
+                            </Typography>
+                          </Box>
+                        </td>
+                        <td style={{ padding: '16px' }}>
+                          <Typography variant="body2">
+                            {app.serviceNames || "Không có dịch vụ"}
+                          </Typography>
+                        </td>
+                        <td style={{ padding: '16px' }}>
+                          <FormControl size="small" sx={{ minWidth: 120 }}>
+                            <Select
+                              value={app.status}
+                              onChange={(e) => handleStatusChange(app.id, parseInt(e.target.value))}
+                            >
+                              <MenuItem value={0}>Mới tạo</MenuItem>
+                              <MenuItem value={1}>Chờ xác nhận</MenuItem>
+                              <MenuItem value={2}>Đã xác nhận</MenuItem>
+                              <MenuItem value={3}>Hoàn thành</MenuItem>
+                              <MenuItem value={4}>Hủy</MenuItem>
+                            </Select>
+                          </FormControl>
+                        </td>
+                        <td style={{ padding: '16px' }}>
+                          <Box display="flex" gap={1}>
+                            <Tooltip title="Xem chi tiết">
+                              <IconButton
+                                size="small"
+                                onClick={() => {
+                                  setSelectedAppointment(app);
+                                  setOpenViewDialog(true);
+                                }}
+                              >
+                                <Eye size={16} />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Chỉnh sửa">
+                              <IconButton
+                                size="small"
+                                onClick={() => {
+                                  setSelectedAppointment(app);
+                                  setOpenEditDialog(true);
+                                }}
+                              >
+                                <Edit size={16} />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Nhắc lịch">
+                              <IconButton
+                                size="small"
+                                onClick={() => handleRemind(app.id)}
+                              >
+                                <MessageCircle size={16} />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Hủy lịch">
+                              <IconButton
+                                size="small"
+                                onClick={() => handleCancel(app.id)}
+                                color="error"
+                              >
+                                <Trash2 size={16} />
+                              </IconButton>
+                            </Tooltip>
+                          </Box>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </Box>
+          </Card>
+          
+          <Box display="flex" justifyContent="center" mt={3}>
+            <Pagination
+              count={totalPages}
+              page={page}
+              onChange={(e, val) => setPage(val)}
+              color="primary"
+              size="large"
+              showFirstButton
+              showLastButton
+            />
+          </Box>
         </>
       )}
 
+      {/* Dialogs */}
       <AppointmentAdd
         open={openAddDialog}
         onClose={() => setOpenAddDialog(false)}
         onSuccess={() => {
           setOpenAddDialog(false);
-          setPage((prev) => prev); // Trigger reload nếu cần
+          setReloadKey(prev => prev + 1);
         }}
       />
 
@@ -338,7 +563,7 @@ const Appointment = () => {
         initialData={selectedAppointment}
         onSuccess={() => {
           setOpenEditDialog(false);
-          setPage((prev) => prev); // Reload lại dữ liệu để cập nhật khung giờ và dịch vụ
+          setReloadKey(prev => prev + 1);
         }}
       />
 
@@ -375,7 +600,7 @@ const Appointment = () => {
         draggable
         pauseOnHover
       />
-    </div>
+    </Box>
   );
 };
 

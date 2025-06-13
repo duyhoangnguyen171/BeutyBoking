@@ -1,21 +1,23 @@
-import React, { useEffect, useState, useRef } from "react";
+// ServiceEdit.jsx
+import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
+import { CKEditor } from "@ckeditor/ckeditor5-react";
+import { UploadFile } from "@mui/icons-material";
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
   Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Stack,
+  TextField,
 } from "@mui/material";
+import axios from "axios";
+import { useEffect, useRef, useState } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import CategoriesService from "../../services/CategoriesService";
 import ServiceService from "../../services/Serviceservice";
 import { uploadFile } from "../../utils/uploadfile";
-import { UploadFile } from "@mui/icons-material";
-import { CKEditor } from "@ckeditor/ckeditor5-react"; // Thêm CKEditor
-import ClassicEditor from "@ckeditor/ckeditor5-build-classic"; // CKEditor build
-import axios from "axios";
 
 const getToken = () => localStorage.getItem("token");
 
@@ -26,17 +28,26 @@ const ServiceEdit = ({ open, onClose, serviceId, onSuccess }) => {
     price: "",
     description: "",
     duration: "",
+    categoryId: 0,
     imageurl: [],
   });
-  const [file, setFile] = useState(null); // For new file upload
+  const [file, setFile] = useState(null);
+  const [categories, setCategories] = useState([]);
   const inpRef = useRef();
 
   useEffect(() => {
     if (open && serviceId) {
       ServiceService.getById(serviceId)
         .then((response) => {
-          const { id, name, price, description, duration, imageurl } =
-            response.data;
+          const {
+            id,
+            name,
+            price,
+            description,
+            duration,
+            imageurl,
+            categoryId,
+          } = response.data;
           setFormData({
             id: id || 0,
             name: name || "",
@@ -44,125 +55,85 @@ const ServiceEdit = ({ open, onClose, serviceId, onSuccess }) => {
             description: description || "",
             duration: duration || "",
             imageurl: imageurl || [],
+            categoryId: categoryId || 0,
           });
         })
         .catch((error) => {
           console.error("Lỗi khi lấy dữ liệu dịch vụ:", error);
-          toast.error("Không thể lấy thông tin dịch vụ.", {
-            position: "top-right",
-            autoClose: 3000,
-            hideProgressBar: false,
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
-            theme: "colored",
-          });
+          toast.error("Không thể lấy thông tin dịch vụ.");
         });
     }
   }, [open, serviceId]);
 
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await CategoriesService.getAll();
+        const categoriesData = response?.$values || response || [];
+        setCategories(categoriesData);
+      } catch (error) {
+        console.error("Lỗi khi lấy danh mục:", error);
+      }
+    };
+    fetchCategories();
+  }, []);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleFileChange = (e) => {
-    setFile(e.target.files[0]); // Handle single file (consistent with ServiceAdd)
+    setFile(e.target.files[0]);
   };
 
   const handleSubmit = async () => {
     const token = getToken();
     if (!token) {
-      toast.error("Vui lòng đăng nhập để cập nhật dịch vụ.", {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        theme: "colored",
-      });
+      toast.error("Vui lòng đăng nhập để cập nhật dịch vụ.");
       return;
     }
 
-    // Validation checks
+    // Validate
     if (
       !formData.name ||
       !formData.price ||
       !formData.description ||
       !formData.duration
     ) {
-      toast.error("Vui lòng điền đầy đủ thông tin!", {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        theme: "colored",
-      });
+      toast.error("Vui lòng điền đầy đủ thông tin!");
       return;
     }
+
     if (isNaN(formData.price) || Number(formData.price) <= 0) {
-      toast.error("Giá phải là một số dương!", {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        theme: "colored",
-      });
+      toast.error("Giá phải là số dương!");
       return;
     }
+
     if (formData.name.trim().length < 3) {
-      toast.error("Tên dịch vụ phải có ít nhất 3 ký tự!", {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        theme: "colored",
-      });
+      toast.error("Tên dịch vụ phải có ít nhất 3 ký tự!");
       return;
     }
+
     if (formData.description.trim().length < 3) {
-      toast.error("Mô tả phải có ít nhất 3 ký tự!", {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        theme: "colored",
-      });
+      toast.error("Mô tả phải có ít nhất 3 ký tự!");
       return;
     }
+
     if (isNaN(formData.duration) || Number(formData.duration) <= 0) {
-      toast.error("Thời gian phải là một số dương!", {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        theme: "colored",
-      });
+      toast.error("Thời gian phải là số dương!");
       return;
     }
 
     try {
-      let downloadURL = formData.imageurl; // Keep existing imageurl by default
+      let downloadURL = formData.imageurl;
+
       if (file) {
         downloadURL = await uploadFile(file, "images");
         if (!downloadURL || typeof downloadURL !== "string") {
-          throw new Error("Tải ảnh lên thất bại, không nhận được URL hợp lệ.");
+          throw new Error("Tải ảnh thất bại!");
         }
-        downloadURL = [downloadURL]; // Wrap in array to match ServiceAdd
+        downloadURL = [downloadURL];
       }
 
       const submitData = {
@@ -171,35 +142,26 @@ const ServiceEdit = ({ open, onClose, serviceId, onSuccess }) => {
         price: Number(formData.price),
         description: formData.description.trim(),
         duration: Number(formData.duration),
-        imageurl: downloadURL, // Include imageurl
-        appointments: null, // Keep null if server handles it
+        categoryId: Number(formData.categoryId),
+        imageurl: downloadURL,
+        appointments: null,
       };
 
       await axios.put(
         `https://localhost:7169/api/services/${serviceId}`,
         submitData,
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
 
       toast.success("Cập nhật dịch vụ thành công!", {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        theme: "colored",
         onClose: () => {
           onSuccess();
           onClose();
         },
       });
 
-      // Reset form
       setFormData({
         id: 0,
         name: "",
@@ -207,23 +169,13 @@ const ServiceEdit = ({ open, onClose, serviceId, onSuccess }) => {
         description: "",
         duration: "",
         imageurl: [],
+        categoryId: 0,
       });
       setFile(null);
       if (inpRef.current) inpRef.current.value = "";
     } catch (error) {
-      console.error(
-        "Lỗi khi cập nhật dịch vụ:",
-        error.response?.data || error.message
-      );
-      toast.error("Cập nhật dịch vụ thất bại. Vui lòng thử lại.", {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        theme: "colored",
-      });
+      console.error("Lỗi khi cập nhật:", error.response?.data || error.message);
+      toast.error("Cập nhật thất bại. Vui lòng thử lại.");
     }
   };
 
@@ -248,17 +200,30 @@ const ServiceEdit = ({ open, onClose, serviceId, onSuccess }) => {
             type="number"
             value={formData.price}
             onChange={handleChange}
-            inputProps={{ min: 0, step: 1 }}
+            inputProps={{ min: 0 }}
           />
+          <TextField
+            select
+            fullWidth
+            label="Danh mục"
+            name="categoryId"
+            value={formData.categoryId}
+            onChange={handleChange}
+            SelectProps={{ native: true }}
+          >
+            <option value="">-- Chọn danh mục --</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.name}
+              </option>
+            ))}
+          </TextField>
           <CKEditor
             editor={ClassicEditor}
             data={formData.description}
             onChange={(event, editor) => {
               const data = editor.getData();
-              setFormData((prevData) => ({
-                ...prevData,
-                description: data,
-              }));
+              setFormData((prev) => ({ ...prev, description: data }));
             }}
           />
           <TextField
@@ -269,7 +234,7 @@ const ServiceEdit = ({ open, onClose, serviceId, onSuccess }) => {
             type="number"
             value={formData.duration}
             onChange={handleChange}
-            inputProps={{ min: 0, step: 1 }}
+            inputProps={{ min: 0 }}
           />
           <label>
             <Button
@@ -278,8 +243,7 @@ const ServiceEdit = ({ open, onClose, serviceId, onSuccess }) => {
               color="secondary"
               component="span"
               startIcon={<UploadFile />}
-              onClick={() => inpRef.current.click()}
-              aria-label="Upload image"
+              onClick={() => inpRef.current?.click()}
             >
               Thêm ảnh
             </Button>
@@ -293,9 +257,13 @@ const ServiceEdit = ({ open, onClose, serviceId, onSuccess }) => {
           </label>
           {(file || formData.imageurl.length > 0) && (
             <img
-              src={file ? URL.createObjectURL(file) : formData.imageurl[0] || ""}
+              src={file ? URL.createObjectURL(file) : formData.imageurl[0]}
               alt="Preview"
-              style={{ maxWidth: "100%", maxHeight: "200px", marginTop: "10px" }}
+              style={{
+                maxWidth: "100%",
+                maxHeight: "200px",
+                marginTop: "10px",
+              }}
             />
           )}
         </Stack>
@@ -306,18 +274,7 @@ const ServiceEdit = ({ open, onClose, serviceId, onSuccess }) => {
           Lưu
         </Button>
       </DialogActions>
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="colored"
-      />
+      <ToastContainer />
     </Dialog>
   );
 };
