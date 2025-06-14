@@ -1,45 +1,45 @@
 // src/components/appointments/AppointmentAdd.jsx
 
 import {
+  CalendarToday as CalendarIcon,
+  Close as CloseIcon,
+  Notes as NotesIcon,
+  PersonAdd as PersonAddIcon,
+  Person as PersonIcon,
+  Phone as PhoneIcon,
+  Schedule as ScheduleIcon,
+  Search as SearchIcon,
+  RoomService as ServiceIcon,
+  Work as WorkIcon,
+} from "@mui/icons-material";
+import {
+  Alert,
+  Box,
   Button,
   Checkbox,
+  Chip,
   CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  Divider,
+  Fade,
   FormControl,
   FormControlLabel,
+  Grid,
+  IconButton,
   InputLabel,
   ListItemText,
   MenuItem,
   OutlinedInput,
+  Paper,
   Select,
   Stack,
   TextField,
-  Typography,
-  Box,
-  Chip,
-  Divider,
-  Alert,
-  Fade,
-  Paper,
-  Grid,
-  IconButton,
   Tooltip,
+  Typography,
 } from "@mui/material";
-import {
-  Person as PersonIcon,
-  Phone as PhoneIcon,
-  Schedule as ScheduleIcon,
-  Work as WorkIcon,
-  RoomService as ServiceIcon,
-  Notes as NotesIcon,
-  Search as SearchIcon,
-  PersonAdd as PersonAddIcon,
-  Close as CloseIcon,
-  CalendarToday as CalendarIcon,
-} from "@mui/icons-material";
 import { useEffect, useState } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -189,70 +189,82 @@ const AppointmentAdd = ({ open, onClose, onSuccess, currentUserId }) => {
       setSearchLoading(false);
     }
   };
-
+const getSelectedServices = () => {
+  return serviceList
+    .filter((s) => appointmentData.serviceIds.includes(s.id))
+    .map((s) => s.name);
+};
   const handleSubmit = async () => {
-    // Validation
-    if (!appointmentData.appointmentDate) {
-      toast.error("Vui lòng chọn ngày hẹn");
-      return;
-    }
-    if (!appointmentData.staffId) {
-      toast.error("Vui lòng chọn nhân viên");
-      return;
-    }
-    if (!appointmentData.timeSlot) {
-      toast.error("Vui lòng chọn khung giờ");
-      return;
-    }
-    if (appointmentData.serviceIds.length === 0) {
-      toast.error("Vui lòng chọn ít nhất một dịch vụ");
-      return;
-    }
-    if (!isGuest && !appointmentData.customerId) {
-      toast.error("Vui lòng chọn khách hàng hoặc chọn khách vãng lai");
-      return;
-    }
-    if (isGuest && (!guestInfo.fullName.trim() || !guestInfo.phone.trim())) {
-      toast.error("Vui lòng điền đầy đủ thông tin khách vãng lai");
-      return;
+  // Validation
+  if (!appointmentData.appointmentDate) {
+    toast.error("Vui lòng chọn ngày hẹn");
+    return;
+  }
+
+  // Log the appointment date before submitting
+  console.log("Appointment Date:", appointmentData.appointmentDate);
+
+  // Convert appointmentDate from local time (e.g., Vietnam) to UTC
+  const localAppointmentDate = new Date(appointmentData.appointmentDate);  // This is local time (Vietnam time)
+  const utcAppointmentDate = new Date(localAppointmentDate).toISOString();  // Convert to UTC and format as ISO string
+
+  // Additional validation
+  if (!appointmentData.staffId) {
+    toast.error("Vui lòng chọn nhân viên");
+    return;
+  }
+  if (!appointmentData.timeSlot) {
+    toast.error("Vui lòng chọn khung giờ");
+    return;
+  }
+  if (appointmentData.serviceIds.length === 0) {
+    toast.error("Vui lòng chọn ít nhất một dịch vụ");
+    return;
+  }
+  if (!isGuest && !appointmentData.customerId) {
+    toast.error("Vui lòng chọn khách hàng hoặc chọn khách vãng lai");
+    return;
+  }
+  if (isGuest && (!guestInfo.fullName.trim() || !guestInfo.phone.trim())) {
+    toast.error("Vui lòng điền đầy đủ thông tin khách vãng lai");
+    return;
+  }
+
+  setLoading(true);
+  try {
+    let customerId = currentUserId;
+
+    // Handle guest customer creation
+    if (isGuest) {
+      const guest = await createGuest(guestInfo);
+      customerId = guest.id; // Get the newly created guest ID
+    } else if (matchedCustomers.length > 0) {
+      customerId = appointmentData.customerId;  // Use the matched customer's ID
     }
 
-    setLoading(true);
-    try {
-      let customerId = currentUserId;
-      if (isGuest) {
-        const guest = await createGuest(guestInfo);
-        customerId = guest.id;
-      } else if (matchedCustomers.length > 0) {
-        customerId = appointmentData.customerId;
-      }
+    const payload = {
+      ...appointmentData,
+      customerId,
+      timeSlotId: appointmentData.timeSlot,
+      appointmentDate: utcAppointmentDate,  // Ensure appointmentDate is in UTC
+    };
 
-      const payload = {
-        ...appointmentData,
-        customerId,
-        timeSlotId: appointmentData.timeSlot,
-        appointmentDate: new Date(
-          appointmentData.appointmentDate
-        ).toISOString(),
-      };
+    // Call API to create appointment
+    await AppointmentService.create(payload);
 
-      await AppointmentService.create(payload);
-      toast.success("Thêm lịch hẹn thành công!");
-      setTimeout(() => {
-        window.location.reload();
-      }, 1500);
-    } catch (e) {
-      toast.error("Lỗi khi thêm lịch");
-    } finally {
-      setLoading(false);
-    }
-  };
+    toast.success("Thêm lịch hẹn thành công!");
+    setTimeout(() => {
+      window.location.reload();  // Refresh page or update state as needed
+    }, 1500);
+  } catch (e) {
+    toast.error("Lỗi khi thêm lịch");
+  } finally {
+    setLoading(false);
+  }
+};
 
-  const getSelectedServices = () => {
-    return serviceList
-      .filter((s) => appointmentData.serviceIds.includes(s.id))
-      .map((s) => s.name);
-  };
+
+
 
   return (
     <Dialog 
@@ -306,7 +318,7 @@ const AppointmentAdd = ({ open, onClose, onSuccess, currentUserId }) => {
               </Typography>
               <TextField
                 label="Ngày hẹn"
-                type="date"
+                type="datetime-local"
                 name="appointmentDate"
                 value={appointmentData.appointmentDate}
                 onChange={(e) =>

@@ -7,9 +7,8 @@
         public DateTime AppointmentDate
         {
             get => _appointmentDate;
-            set => _appointmentDate = DateTime.SpecifyKind(value.ToUniversalTime(), DateTimeKind.Utc);
+            set => _appointmentDate = DateTime.SpecifyKind(value, DateTimeKind.Utc); // Đảm bảo lưu trữ theo UTC
         }
-
         public string? Notes { get; set; }
         public int? CustomerId { get; set; }
         public int? StaffId { get; set; }

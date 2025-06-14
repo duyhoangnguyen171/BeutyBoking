@@ -33,7 +33,7 @@ const LoginForm = () => {
       setAuthToken(token);
 
       if (role.toLowerCase() === "admin") {
-        navigate("/admin");
+        navigate("/admin/dashboards");
       } else {
         navigate("/staff");
       }

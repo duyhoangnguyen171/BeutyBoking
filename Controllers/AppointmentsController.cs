@@ -19,7 +19,11 @@ namespace BookingSalonHair.Controllers
     {
         private readonly SalonContext _context;
         private readonly EmailHelper _emailHelper;
-       
+        private string GenerateOTP()
+        {
+            var random = new Random();
+            return random.Next(100000, 999999).ToString();  // Tạo mã OTP 6 chữ số
+        }
         public AppointmentsController(SalonContext context, EmailHelper emailHelper)
         {
             _context = context;
@@ -199,11 +203,15 @@ namespace BookingSalonHair.Controllers
                 if (isBooked)
                     return BadRequest("Khung giờ này đã được đặt cho nhân viên.");
 
-                // ❗ Đánh dấu là đã được đặt
+                // Đánh dấu là đã được đặt
                 staffTimeSlot.IsAvailable = false;
                 _context.StaffTimeSlots.Update(staffTimeSlot);
             }
 
+            // Sinh mã OTP
+            var otp = GenerateOTP();
+
+            // Tạo lịch hẹn tạm thời
             var appointment = new Appointment
             {
                 AppointmentDate = staffTimeSlot != null
@@ -215,8 +223,9 @@ namespace BookingSalonHair.Controllers
                 WorkShiftId = dto.WorkShiftId,
                 StaffTimeSlotId = staffTimeSlot?.Id ?? 0,
                 Status = Enum.IsDefined(typeof(AppointmentStatus), dto.Status)
-                         ? (AppointmentStatus)dto.Status
-                         : AppointmentStatus.Accepted,
+                            ? (AppointmentStatus)dto.Status
+                            : AppointmentStatus.Accepted,
+                OTP = otp,  // Lưu mã OTP vào DB
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
                 AppointmentServices = dto.ServiceIds
@@ -226,34 +235,97 @@ namespace BookingSalonHair.Controllers
             _context.Appointments.Add(appointment);
             await _context.SaveChangesAsync();
 
-            // Load các thông tin liên quan
-            await _context.Entry(appointment).Reference(a => a.Customer).LoadAsync();
-            await _context.Entry(appointment).Reference(a => a.Staff).LoadAsync();
-            await _context.Entry(appointment).Reference(a => a.WorkShift).LoadAsync();
-            await _context.Entry(appointment).Collection(a => a.AppointmentServices).LoadAsync();
-            foreach (var item in appointment.AppointmentServices)
+            // Gửi email chứa mã OTP
+            if (!string.IsNullOrWhiteSpace(customer?.Email))
             {
-                await _context.Entry(item).Reference(a => a.Service).LoadAsync();
-            }
+                var emailBody = $@"
+        Xin chào {customer.FullName},
 
-            // Gửi email nếu có
-            if (!string.IsNullOrWhiteSpace(customer.Email))
-            {
+        Bạn đã đặt lịch hẹn vào lúc {appointment.AppointmentDate:HH:mm dd/MM/yyyy}.
+        Để xác nhận lịch hẹn của bạn, vui lòng nhập mã OTP dưới đây:
+
+        Mã OTP của bạn là: {otp}
+
+        Lưu ý: Mã OTP này sẽ hết hạn sau 10 phút kể từ khi bạn nhận được email này.";
+
                 try
                 {
                     await _emailHelper.SendEmailAsync(
                         customer.Email,
-                        "Thông báo đặt lịch",
-                        $"Xin chào {customer.FullName}, bạn đã đặt lịch hẹn vào lúc {appointment.AppointmentDate:HH:mm dd/MM/yyyy}."
+                        "Thông báo đặt lịch và mã OTP",
+                        emailBody
                     );
                 }
                 catch (Exception ex)
                 {
+                    // Xử lý lỗi gửi email (log lỗi hoặc thông báo cho người dùng)
                     Console.WriteLine($"Lỗi gửi email: {ex.Message}");
+                    return StatusCode(500, "Có lỗi xảy ra trong quá trình gửi email.");
                 }
+            }
+            else
+            {
+                return BadRequest("Khách hàng không có địa chỉ email.");
             }
 
             return CreatedAtAction(nameof(GetAppointment), new { id = appointment.Id }, appointment);
+        }
+
+
+
+        [HttpPost("verify/confirm")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ConfirmAppointment([FromBody] OTPVerificationDto dto)
+        {
+            // Tìm lịch hẹn
+            var appointment = await _context.Appointments.FindAsync(dto.AppointmentId);
+
+            if (appointment == null)
+                return NotFound("Lịch hẹn không tồn tại.");
+
+            if (appointment.IsVerified)
+                return BadRequest("Lịch hẹn này đã được xác nhận.");
+
+            // Kiểm tra số lần nhập OTP
+            if (appointment.OtpAttempts > 3)
+            {
+                // Nếu nhập sai quá 3 lần, hủy lịch hẹn và khôi phục khung giờ
+                appointment.Status = AppointmentStatus.Canceled;  // Đánh dấu trạng thái là đã hủy
+                var staffTimeSlot = await _context.StaffTimeSlots
+                    .FirstOrDefaultAsync(s => s.Id == appointment.StaffTimeSlotId);
+
+                if (staffTimeSlot != null)
+                {
+                    staffTimeSlot.IsAvailable = true; // Đặt lại trạng thái khung giờ thành có sẵn
+                    _context.StaffTimeSlots.Update(staffTimeSlot);
+                }
+
+                _context.Appointments.Update(appointment);
+                await _context.SaveChangesAsync();
+
+                return BadRequest("Bạn đã nhập mã OTP sai quá 3 lần. Lịch hẹn này không thể xác nhận.");
+            }
+
+            // Kiểm tra mã OTP
+            if (appointment.OTP != dto.Otp)
+            {
+                // Tăng số lần nhập OTP sai
+                appointment.OtpAttempts++;
+                _context.Appointments.Update(appointment);
+                await _context.SaveChangesAsync();
+
+                return BadRequest("Mã OTP không đúng.");
+            }
+
+            // Cập nhật trạng thái lịch hẹn thành "Đã xác nhận"
+            appointment.IsVerified = true;
+            appointment.Status = AppointmentStatus.Accepted;
+            appointment.UpdatedAt = DateTime.UtcNow;
+
+            _context.Appointments.Update(appointment);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Lịch hẹn của bạn đã được xác nhận." });
         }
         // PUT: api/Appointments/{id}
         [HttpPut("{id}")]
