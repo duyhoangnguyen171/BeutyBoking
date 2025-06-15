@@ -12,5 +12,6 @@ namespace BookingSalonHair.Models
         public ICollection<AppointmentService> AppointmentServices { get; set; } = new List<AppointmentService>();
         public string Description { get; set; }
         public int Duration { get; set; } // Số phút dịch vụ
+        public ICollection<Review> Reviews { get; set; } = new List<Review>();
     }
 }

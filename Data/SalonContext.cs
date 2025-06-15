@@ -11,8 +11,10 @@ namespace SalonBooking.API.Data
         public DbSet<Appointment> Appointments { get; set; }
         public DbSet<Contact> Contacts { get; set; }
         public DbSet<Gallery> Galleries { get; set; }
+        public DbSet<Banner> Banners { get; set; }
         public DbSet<Service> Services { get; set; }
         public DbSet<News> News { get; set; }
+        public DbSet<Review> Reviews { get; set; }
         public DbSet<User> Users { get; set; }
         public DbSet<TimeSlot> TimeSlots { get; set; }
         public DbSet<StaffTimeSlot> StaffTimeSlots { get; set; }
@@ -105,7 +107,28 @@ namespace SalonBooking.API.Data
                 .HasOne(x => x.Service)
                 .WithMany(s => s.AppointmentServices)
                 .HasForeignKey(x => x.ServiceId);
-
+            modelBuilder.Entity<AppointmentService>()
+    .HasOne(asr => asr.Review)  // Mối quan hệ với Review
+    .WithOne(r => r.AppointmentService)  // Một Review có một AppointmentService
+    .HasForeignKey<AppointmentService>(asr => new { asr.AppointmentId, asr.ServiceId })  // Liên kết qua AppointmentId và ServiceId
+    .OnDelete(DeleteBehavior.SetNull); // Thay đổi từ Cascade thành Restrict
+       modelBuilder.Entity<Review>()
+      .HasKey(r => r.Id);
+            // Mối quan hệ giữa Review và AppointmentService (ngược lại)
+            modelBuilder.Entity<Review>()
+    .HasOne(r => r.AppointmentService)  // Mối quan hệ ngược lại với AppointmentService
+    .WithOne(asr => asr.Review)  // Một AppointmentService có một Review
+    .HasForeignKey<Review>(r => new { r.AppointmentId, r.ServiceId })  // Liên kết qua AppointmentId và ServiceId
+    .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Review>()
+            .HasOne(r => r.Customer)  // Mối quan hệ Review -> User (Customer)
+            .WithMany(u => u.Reviews) // User có nhiều Review
+            .HasForeignKey(r => r.CustomerId);
+            modelBuilder.Entity<Review>()
+            .HasOne(r => r.Service)
+            .WithMany(s => s.Reviews)
+            .HasForeignKey(r => r.ServiceId);
+            // Xử lý khi xóa Review
             // User - Contact
             modelBuilder.Entity<Contact>()
                 .HasOne(c => c.User)

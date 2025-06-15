@@ -10,8 +10,8 @@ import "react-toastify/dist/ReactToastify.css";
 
 import AdminPanel from "./component/common/AdminPanel";
 import PrivateRoute from "./component/common/PrivateRoute";
-import Dashboard  from "./modules/dashboards/Dashboard";
-import AppointmentsChart  from "./modules/charts/AppointmentsChart";
+import AppointmentsChart from "./modules/charts/AppointmentsChart";
+import Dashboard from "./modules/dashboards/Dashboard";
 
 import Appointment from "./modules/appointments/Appointment";
 import LoginForm from "./modules/auth/LoginForm";
@@ -23,6 +23,8 @@ import WorkShift from "./modules/workshifts/WorkShift";
 
 import NewsAdd from "./modules/news/NewsAdd";
 import NewsEdit from "./modules/news/NewsEdit";
+
+import Banner from "./modules/banners/Banner";
 
 
 import UserAdd from "./modules/users/UserAdd";
@@ -64,6 +66,7 @@ const App = () => {
               <Route path="news" element={<New />} />
               <Route path="newsadd" element={<NewsAdd />} />
               <Route path="newsedit" element={<NewsEdit />} />
+               <Route path="banners" element={<Banner />} />
               <Route path="workshifts" element={<WorkShift />} />
               <Route path="users/add" element={<UserAdd />} />
               <Route path="users/edit" element={<UserEdit />} />

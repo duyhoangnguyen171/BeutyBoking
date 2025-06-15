@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SalonBooking.API.Data;
 
@@ -11,9 +12,11 @@ using SalonBooking.API.Data;
 namespace BookingSalonHair.Migrations
 {
     [DbContext(typeof(SalonContext))]
-    partial class SalonContextModelSnapshot : ModelSnapshot
+    [Migration("20250615092529_AddPrimaryKeyToReview")]
+    partial class AddPrimaryKeyToReview
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -341,11 +344,14 @@ namespace BookingSalonHair.Migrations
                     b.Property<int>("ServiceId")
                         .HasColumnType("int");
 
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("CustomerId");
-
                     b.HasIndex("ServiceId");
+
+                    b.HasIndex("UserId");
 
                     b.HasIndex("AppointmentId", "ServiceId")
                         .IsUnique()
@@ -547,9 +553,6 @@ namespace BookingSalonHair.Migrations
                     b.Property<string>("Profile")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("ReviewCount")
-                        .HasColumnType("int");
-
                     b.Property<string>("Role")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -658,15 +661,15 @@ namespace BookingSalonHair.Migrations
 
             modelBuilder.Entity("BookingSalonHair.Models.Review", b =>
                 {
-                    b.HasOne("User", "Customer")
-                        .WithMany("Reviews")
-                        .HasForeignKey("CustomerId")
+                    b.HasOne("BookingSalonHair.Models.Service", "Service")
+                        .WithMany()
+                        .HasForeignKey("ServiceId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("BookingSalonHair.Models.Service", "Service")
-                        .WithMany("Reviews")
-                        .HasForeignKey("ServiceId")
+                    b.HasOne("User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -677,9 +680,9 @@ namespace BookingSalonHair.Migrations
 
                     b.Navigation("AppointmentService");
 
-                    b.Navigation("Customer");
-
                     b.Navigation("Service");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("BookingSalonHair.Models.Service", b =>
@@ -777,8 +780,6 @@ namespace BookingSalonHair.Migrations
             modelBuilder.Entity("BookingSalonHair.Models.Service", b =>
                 {
                     b.Navigation("AppointmentServices");
-
-                    b.Navigation("Reviews");
                 });
 
             modelBuilder.Entity("BookingSalonHair.Models.WorkShift", b =>
@@ -797,8 +798,6 @@ namespace BookingSalonHair.Migrations
                     b.Navigation("CustomerAppointments");
 
                     b.Navigation("Galleries");
-
-                    b.Navigation("Reviews");
 
                     b.Navigation("StaffAppointments");
 

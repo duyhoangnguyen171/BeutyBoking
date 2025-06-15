@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SalonBooking.API.Data;
 
@@ -11,9 +12,11 @@ using SalonBooking.API.Data;
 namespace BookingSalonHair.Migrations
 {
     [DbContext(typeof(SalonContext))]
-    partial class SalonContextModelSnapshot : ModelSnapshot
+    [Migration("20250614152251_addtablebanner")]
+    partial class addtablebanner
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -91,9 +94,6 @@ namespace BookingSalonHair.Migrations
                         .HasColumnType("int");
 
                     b.Property<int>("ServiceId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("ReviewId")
                         .HasColumnType("int");
 
                     b.HasKey("AppointmentId", "ServiceId");
@@ -314,46 +314,6 @@ namespace BookingSalonHair.Migrations
                     b.ToTable("PasswordResetTokens");
                 });
 
-            modelBuilder.Entity("BookingSalonHair.Models.Review", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int?>("AppointmentId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Comment")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("CustomerId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("DateCreated")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("Rating")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ServiceId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CustomerId");
-
-                    b.HasIndex("ServiceId");
-
-                    b.HasIndex("AppointmentId", "ServiceId")
-                        .IsUnique()
-                        .HasFilter("[AppointmentId] IS NOT NULL");
-
-                    b.ToTable("Reviews");
-                });
-
             modelBuilder.Entity("BookingSalonHair.Models.Service", b =>
                 {
                     b.Property<int>("Id")
@@ -544,12 +504,6 @@ namespace BookingSalonHair.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Profile")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("ReviewCount")
-                        .HasColumnType("int");
-
                     b.Property<string>("Role")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -656,32 +610,6 @@ namespace BookingSalonHair.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("BookingSalonHair.Models.Review", b =>
-                {
-                    b.HasOne("User", "Customer")
-                        .WithMany("Reviews")
-                        .HasForeignKey("CustomerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("BookingSalonHair.Models.Service", "Service")
-                        .WithMany("Reviews")
-                        .HasForeignKey("ServiceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("BookingSalonHair.Models.AppointmentService", "AppointmentService")
-                        .WithOne("Review")
-                        .HasForeignKey("BookingSalonHair.Models.Review", "AppointmentId", "ServiceId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("AppointmentService");
-
-                    b.Navigation("Customer");
-
-                    b.Navigation("Service");
-                });
-
             modelBuilder.Entity("BookingSalonHair.Models.Service", b =>
                 {
                     b.HasOne("BookingSalonHair.Models.Category", "Category")
@@ -758,12 +686,6 @@ namespace BookingSalonHair.Migrations
                     b.Navigation("AppointmentServices");
                 });
 
-            modelBuilder.Entity("BookingSalonHair.Models.AppointmentService", b =>
-                {
-                    b.Navigation("Review")
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("BookingSalonHair.Models.Category", b =>
                 {
                     b.Navigation("Services");
@@ -777,8 +699,6 @@ namespace BookingSalonHair.Migrations
             modelBuilder.Entity("BookingSalonHair.Models.Service", b =>
                 {
                     b.Navigation("AppointmentServices");
-
-                    b.Navigation("Reviews");
                 });
 
             modelBuilder.Entity("BookingSalonHair.Models.WorkShift", b =>
@@ -797,8 +717,6 @@ namespace BookingSalonHair.Migrations
                     b.Navigation("CustomerAppointments");
 
                     b.Navigation("Galleries");
-
-                    b.Navigation("Reviews");
 
                     b.Navigation("StaffAppointments");
 

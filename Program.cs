@@ -67,6 +67,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<INewsService, NewsService>();
 builder.Services.AddScoped<IAppointmentService, BookingSalonHair.Services.AppointmentService>();
 builder.Services.AddScoped<IServiceService, ServiceService>();
+builder.Services.AddScoped<IBannerService, BannerService>();
 builder.Services.AddScoped<IWorkShiftService, WorkShiftService>();
 builder.Services.AddScoped<IContactService, ContactService>();
 builder.Services.AddScoped<ICategoriesService, CategoriesService>();
