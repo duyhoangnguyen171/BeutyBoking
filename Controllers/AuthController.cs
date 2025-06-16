@@ -43,7 +43,9 @@ namespace BookingSalonHair.Controllers
 
             if (string.IsNullOrWhiteSpace(model.Password))
                 return BadRequest("Mật khẩu không được để trống.");
-
+            string imageurl = string.IsNullOrWhiteSpace(model.ImageUrl)
+                      ? "https://example.com/default-avatar.png"  // Sử dụng ảnh mặc định nếu không có ảnh
+                      : model.ImageUrl; // Nếu có ảnh, sử dụng URL ảnh gửi lên
             var user = new User
             {
                 FullName = model.FullName,
@@ -51,7 +53,8 @@ namespace BookingSalonHair.Controllers
                 PasswordHash = Convert.ToBase64String(Encoding.UTF8.GetBytes(model.Password)),
                 Phone = model.Phone,
                 Role = model.Role,
-                IsGuest = model.IsGuest
+                IsGuest = model.IsGuest,
+                imageurl = model.ImageUrl
             };
 
             _context.Users.Add(user);
@@ -96,8 +99,12 @@ namespace BookingSalonHair.Controllers
                 Console.WriteLine($"Lỗi gửi email: {ex.Message}");
             }
 
-            return Ok(new { token });
-         
+            return Ok(new
+            {
+                token,
+                imageurl = user.imageurl ??""  // Thêm URL ảnh đại diện vào kết quả trả về
+            });
+
         }
         [HttpPost("forgot-password")]
         [AllowAnonymous]

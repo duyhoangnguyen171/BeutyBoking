@@ -76,7 +76,7 @@ namespace BookingSalonHair.Controllers
         }
 
         // PUT: api/Users/5
-         [HttpPost("PutUser")]
+        [HttpPost("PutUser")]
         [Authorize(Roles = "admin")]
         public async Task<IActionResult> PutUser(UserDTO userDto)
         {
@@ -89,6 +89,14 @@ namespace BookingSalonHair.Controllers
             existingUser.Email = userDto.Email;
             existingUser.Phone = userDto.Phone;
             existingUser.Role = userDto.Role;
+            if (string.IsNullOrEmpty(userDto.imageurl))
+            {
+                existingUser.imageurl = null; // Cập nhật imageurl thành null để xóa ảnh khỏi cơ sở dữ liệu
+            }
+            else
+            {
+                existingUser.imageurl = userDto.imageurl; // Cập nhật ảnh nếu có
+            }
 
             try
             {
@@ -223,6 +231,10 @@ namespace BookingSalonHair.Controllers
             user.Email = dto.Email ?? user.Email;
             user.Phone = dto.Phone ?? user.Phone;
 
+            if (!string.IsNullOrWhiteSpace(dto.imageurl))
+            {
+                user.imageurl = dto.imageurl;
+            }
             // Nếu yêu cầu đổi mật khẩu
             if (!string.IsNullOrWhiteSpace(dto.CurrentPassword) && !string.IsNullOrWhiteSpace(dto.NewPassword))
             {

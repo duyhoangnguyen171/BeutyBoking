@@ -47,7 +47,7 @@ namespace BookingSalonHair.Controllers
         {
             if (reviewDto == null)
             {
-                return BadRequest("Invalid review data.");
+                return BadRequest("Dữ liệu đánh giá không hợp lệ.");
             }
 
             // Lấy khách hàng theo CustomerId
@@ -57,57 +57,29 @@ namespace BookingSalonHair.Controllers
 
             if (customer == null)
             {
-                return NotFound("Customer not found.");
+                return NotFound("Không tìm thấy khách hàng.");
             }
 
-            // Kiểm tra xem khách hàng có lịch hẹn chưa hoàn thành hay không
-            var lastCompletedAppointment = await _context.Appointments
-                .Where(a => a.CustomerId == reviewDto.CustomerId && a.Status == AppointmentStatus.Completed)
-                .OrderByDescending(a => a.AppointmentDate)
-                .FirstOrDefaultAsync();
-
-            if (lastCompletedAppointment == null)
-            {
-                // Nếu chưa có lịch hẹn hoàn thành, khách hàng chỉ được 1 lần đánh giá trong tháng
-                var lastReview = await _context.Reviews
-                    .Where(r => r.CustomerId == reviewDto.CustomerId && r.DateCreated > DateTime.Now.AddMonths(-1))
-                    .CountAsync();
-
-                if (lastReview >= 1)
-                {
-                    return BadRequest("You have already given a review in the last month.");
-                }
-            }
-            else
-            {
-                // Nếu có lịch hẹn hoàn thành, khách hàng có thể đánh giá 2 lần trong tuần
-                var reviewsThisWeek = await _context.Reviews
-                    .Where(r => r.CustomerId == reviewDto.CustomerId && r.DateCreated > DateTime.Now.AddDays(-7))
-                    .CountAsync();
-
-                if (reviewsThisWeek >= 2)
-                {
-                    return BadRequest("You have already given two reviews this week. Please complete your next appointment to reset the limit.");
-                }
-
-                // Cập nhật số lần đánh giá của khách hàng trong tuần hoặc tháng
-                customer.ReviewCount++;
-
-                // Nếu đã đạt giới hạn số lần đánh giá trong tuần, yêu cầu khách hàng hoàn thành lịch hẹn tiếp theo
-                if (customer.ReviewCount > 2)
-                {
-                    return BadRequest("You have already exceeded the review limit for this week.");
-                }
-            }
-
-            // Kiểm tra OTP đã xác nhận và khách hàng đã xác nhận lịch hẹn
+            // Lấy lịch hẹn hoàn thành của khách hàng
             var appointment = await _context.Appointments
-                .Where(a => a.Id == reviewDto.AppointmentServiceId && a.CustomerId == reviewDto.CustomerId)
+                .Where(a => a.CustomerId == reviewDto.CustomerId && a.Id == reviewDto.AppointmentServiceId && a.Status == AppointmentStatus.Completed)
                 .FirstOrDefaultAsync();
 
-            if (appointment == null || !appointment.IsVerified)
+            if (appointment == null)
             {
-                return BadRequest("You must complete the appointment and verify it before reviewing.");
+                return BadRequest("Bạn chỉ có thể đánh giá khi lịch hẹn đã hoàn thành.");
+            }
+
+            // Kiểm tra xem lịch hẹn đã được đánh giá chưa
+            if (appointment.HasReviewed)
+            {
+                return BadRequest("Lịch hẹn này đã được bạn đánh giá!");
+            }
+
+            // Kiểm tra thời gian đánh giá hợp lệ (trong vòng 30 ngày kể từ khi hoàn thành lịch hẹn)
+            if (appointment.AppointmentDate.AddDays(30) < DateTime.Now)
+            {
+                return BadRequest("Thời gian đánh giá này đã hết (30 ngày kể từ khi hoàn thành lịch hẹn).");
             }
 
             // Tạo mới đối tượng Review từ DTO
@@ -121,8 +93,25 @@ namespace BookingSalonHair.Controllers
                 AppointmentId = reviewDto.AppointmentServiceId
             };
 
-            // Lưu vào cơ sở dữ liệu
+            // Lưu Review vào cơ sở dữ liệu
             _context.Reviews.Add(review);
+            await _context.SaveChangesAsync();
+
+            // Cập nhật AppointmentService để liên kết với Review
+            var appointmentService = await _context.AppointmentServices
+                .FirstOrDefaultAsync(asr => asr.AppointmentId == reviewDto.AppointmentServiceId && asr.ServiceId == reviewDto.ServiceId);
+
+            if (appointmentService != null)
+            {
+                // Cập nhật ReviewId trong AppointmentService để liên kết Review với dịch vụ của lịch hẹn
+                appointmentService.ReviewId = review.Id;
+                _context.AppointmentServices.Update(appointmentService);
+                await _context.SaveChangesAsync();
+            }
+
+            // Cập nhật trạng thái đã đánh giá cho lịch hẹn
+            appointment.HasReviewed = true;
+            _context.Appointments.Update(appointment);
             await _context.SaveChangesAsync();
 
             // Trả về kết quả dưới dạng ReviewDTO
@@ -138,6 +127,7 @@ namespace BookingSalonHair.Controllers
 
             return CreatedAtAction(nameof(GetReviewById), new { id = result.Id }, result);
         }
+
 
 
 
@@ -192,7 +182,15 @@ namespace BookingSalonHair.Controllers
 
             return Ok(result);
         }
+        [HttpGet("GetReviewsForCustomer")]
+        public async Task<IActionResult> GetReviewsForCustomer(int customerId)
+        {
+            var reviews = await _context.Reviews
+                .Where(r => r.CustomerId == customerId && r.DateCreated > DateTime.Now.AddDays(-30))
+                .ToListAsync();
 
+            return Ok(reviews);
+        }
         // API để lấy một review theo ID
         [HttpGet("{id}")]
         public async Task<IActionResult> GetReviewById(int id)
@@ -217,6 +215,24 @@ namespace BookingSalonHair.Controllers
             };
 
             return Ok(result);
+        }
+        [HttpDelete("RemoveExpiredReviews")]
+        public async Task<IActionResult> RemoveExpiredReviews()
+        {
+            var expirationDate = DateTime.UtcNow.AddDays(-30);
+
+            var expiredReviews = await _context.Reviews
+                .Where(r => r.DateCreated <= expirationDate)
+                .ToListAsync();
+
+            if (expiredReviews.Any())
+            {
+                _context.Reviews.RemoveRange(expiredReviews);
+                await _context.SaveChangesAsync();
+                return Ok($"{expiredReviews.Count} expired reviews have been deleted.");
+            }
+
+            return Ok("No expired reviews to delete.");
         }
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteReview(int id)

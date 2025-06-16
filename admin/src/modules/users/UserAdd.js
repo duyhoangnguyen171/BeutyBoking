@@ -1,16 +1,18 @@
-import React, { useState } from "react";
+import { UploadFile } from "@mui/icons-material";
 import {
-  TextField,
   Button,
   MenuItem,
   Box,
   Typography,
   Modal,
   CircularProgress,
+  TextField,
 } from "@mui/material";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useState, useRef } from "react";
 import { addUser } from "../../services/UserService";
+import { uploadFile } from "../../utils/uploadfile"; // Hàm upload file
 
 const UserAdd = ({ open, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
@@ -19,11 +21,15 @@ const UserAdd = ({ open, onClose, onSuccess }) => {
     password: "",
     phone: "",
     role: "",
+    imageurl: "", // Thêm trường imageurl
   });
 
   const [loading, setLoading] = useState(false);
+  const [file, setFile] = useState(null); // Trường lưu file ảnh
   const [errorMessage, setErrorMessage] = useState("");
   const [errors, setErrors] = useState({});
+
+  const inpRef = useRef(); // Dùng để mở input file
 
   const roles = ["Admin", "Staff", "Customer"];
 
@@ -38,6 +44,13 @@ const UserAdd = ({ open, onClose, onSuccess }) => {
       [name]: "", // Clear error of this field
     }));
     setErrorMessage(""); // Clear general error
+  };
+
+  const handleImageChange = (e) => {
+    const selectedFile = e.target.files[0];
+    if (selectedFile) {
+      setFile(selectedFile); // Lưu file để gửi lên backend
+    }
   };
 
   const validateForm = () => {
@@ -69,36 +82,47 @@ const UserAdd = ({ open, onClose, onSuccess }) => {
 
     setLoading(true);
     try {
-      await addUser(formData);
+      let imageUrl = "";
+      if (file) {
+        // Nếu có ảnh, tải ảnh lên và lấy URL
+        imageUrl = await uploadFile(file, "user-images");
+        if (!imageUrl || imageUrl === "Error upload") {
+          throw new Error("Lỗi tải ảnh lên.");
+        }
+      }
+
+      const userData = {
+        ...formData,
+        imageurl: imageUrl, // Đính kèm URL ảnh
+      };
+
+      await addUser(userData); // Gửi dữ liệu lên backend
       toast.success("Thêm người dùng thành công!", {
         position: "top-right",
         autoClose: 3000,
       });
       onSuccess();
+
+      // Reset form sau khi thêm người dùng
       setFormData({
         fullName: "",
         email: "",
         password: "",
         phone: "",
         role: "",
+        imageurl: "", // Reset ảnh
       });
+      setFile(null); // Reset file
       setErrors({});
       setErrorMessage("");
       onClose();
     } catch (error) {
       console.error("Lỗi khi thêm người dùng:", error);
-      const errorMsg = error.response?.data?.message || "Thêm người dùng thất bại.";
-
-      // Nếu lỗi liên quan đến email
-      if (errorMsg.toLowerCase().includes("email")) {
-        setErrors((prev) => ({ ...prev, email: errorMsg }));
-      } else {
-        setErrorMessage(errorMsg);
-        toast.error(errorMsg, {
-          position: "top-right",
-          autoClose: 3000,
-        });
-      }
+      setErrorMessage(error.message || "Thêm người dùng thất bại.");
+      toast.error(error.message || "Thêm người dùng thất bại.", {
+        position: "top-right",
+        autoClose: 3000,
+      });
     } finally {
       setLoading(false);
     }
@@ -106,12 +130,7 @@ const UserAdd = ({ open, onClose, onSuccess }) => {
 
   return (
     <>
-      <Modal
-        open={open}
-        onClose={onClose}
-        aria-labelledby="add-user-modal"
-        aria-describedby="add-user-modal-description"
-      >
+      <Modal open={open} onClose={onClose}>
         <Box
           sx={{
             position: "absolute",
@@ -125,7 +144,7 @@ const UserAdd = ({ open, onClose, onSuccess }) => {
             borderRadius: 2,
           }}
         >
-          <Typography id="add-user-modal" variant="h6" component="h2" gutterBottom>
+          <Typography variant="h6" component="h2" gutterBottom>
             Thêm người dùng
           </Typography>
           {errorMessage && (
@@ -202,6 +221,34 @@ const UserAdd = ({ open, onClose, onSuccess }) => {
                 </MenuItem>
               ))}
             </TextField>
+
+            <label>
+              <Button
+                size="small"
+                variant="outlined"
+                color="secondary"
+                component="span"
+                startIcon={<UploadFile />}
+                onClick={() => inpRef.current.click()}
+              >
+                Thêm ảnh
+              </Button>
+              <input
+                type="file"
+                ref={inpRef}
+                onChange={handleImageChange}
+                hidden
+                accept="image/*"
+              />
+            </label>
+            {file && (
+              <img
+                src={URL.createObjectURL(file)}
+                alt="Preview"
+                style={{ maxWidth: "100%", maxHeight: "200px" }}
+              />
+            )}
+
             <Box display="flex" justifyContent="flex-end" mt={2}>
               <Button
                 onClick={onClose}

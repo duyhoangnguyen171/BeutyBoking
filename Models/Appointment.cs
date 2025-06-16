@@ -46,6 +46,7 @@ namespace BookingSalonHair.Models
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow; 
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
         public string OTP { get; set; }  // Mã OTP
+        public bool HasReviewed { get; set; }
         public bool IsVerified { get; set; } = false;  // Trạng thái xác nhận lịch hẹn
         public int OtpAttempts { get; set; } = 0;
         public ICollection<AppointmentService> AppointmentServices { get; set; } = new List<AppointmentService>();

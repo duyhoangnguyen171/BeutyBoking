@@ -1,26 +1,28 @@
-import React, { useEffect, useState } from "react";
-import PropTypes from "prop-types";
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
+  Box,
   Button,
-  TextField,
-  Stack,
-  Typography,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Stack,
+  TextField,
+  Typography,
 } from "@mui/material";
+import PropTypes from "prop-types";
+import { useEffect, useState } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { getUserById, updateUser } from "../../services/UserService";
-
+import { uploadFile } from "../../utils/uploadfile";
 const UserEdit = ({ open, onClose, userId, onSuccess }) => {
   const [form, setForm] = useState({
     fullName: "",
     email: "",
     phone: "",
     role: "",
+    imageurl: "",
   });
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -38,6 +40,7 @@ const UserEdit = ({ open, onClose, userId, onSuccess }) => {
             email: user.email || "",
             phone: user.phone || "",
             role: user.role || "",
+            imageurl: user.imageurl || "",
           });
           setErrorMessage("");
         } else {
@@ -54,7 +57,10 @@ const UserEdit = ({ open, onClose, userId, onSuccess }) => {
         }
       } catch (error) {
         console.error("Lỗi khi lấy thông tin người dùng:", error);
-        setErrorMessage("Lỗi khi lấy thông tin người dùng: " + (error.response?.data?.message || error.message));
+        setErrorMessage(
+          "Lỗi khi lấy thông tin người dùng: " +
+            (error.response?.data?.message || error.message)
+        );
         toast.error("Lỗi khi lấy thông tin người dùng.", {
           position: "top-right",
           autoClose: 3000,
@@ -76,12 +82,55 @@ const UserEdit = ({ open, onClose, userId, onSuccess }) => {
     setForm((prev) => ({ ...prev, [name]: value }));
     setErrorMessage(""); // Clear error message on change
   };
+  const handleRemoveImage = async () => {
+    if (!form.imageurl) return;
+
+    setLoading(true);
+    try {
+      // Gửi yêu cầu tới backend để xóa ảnh
+      await updateUser(userId, { ...form, imageurl: "" }); // Cập nhật imageurl thành rỗng
+      setForm((prev) => ({
+        ...prev,
+        imageurl: "", // Cập nhật form để không có ảnh
+      }));
+      toast.success("Ảnh đã được xóa thành công!", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+    } catch (error) {
+      toast.error("Lỗi khi xóa ảnh!", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  const handleImageChange = async (e) => {
+    const file = e.target.files[0]; // Lấy file ảnh người dùng chọn
+    if (file) {
+      try {
+        const uploadUrl = await uploadFile(file); // Hàm này cần bạn định nghĩa hoặc thay thế bằng một API tải lên ảnh
+        setForm((prev) => ({
+          ...prev,
+          imageurl: uploadUrl, // Cập nhật form với URL ảnh
+        }));
+      } catch (error) {
+        toast.error("Tải ảnh lên thất bại!", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+      }
+    }
+  };
 
   const validateForm = () => {
     if (!form.fullName) return "Họ tên là bắt buộc.";
     if (!form.email) return "Email là bắt buộc.";
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return "Email không hợp lệ.";
-    if (form.phone && !/^\d{10,11}$/.test(form.phone)) return "Số điện thoại không hợp lệ (10-11 chữ số).";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
+      return "Email không hợp lệ.";
+    if (form.phone && !/^\d{10,11}$/.test(form.phone))
+      return "Số điện thoại không hợp lệ (10-11 chữ số).";
     return "";
   };
 
@@ -92,41 +141,27 @@ const UserEdit = ({ open, onClose, userId, onSuccess }) => {
       toast.error(validationError, {
         position: "top-right",
         autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
       });
       return;
     }
 
     setLoading(true);
     try {
-      await updateUser(userId, form);
+      await updateUser(userId, form); // Gửi ảnh cùng các thông tin khác
       toast.success("Cập nhật người dùng thành công!", {
         position: "top-right",
         autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
       });
       if (onSuccess) onSuccess();
       onClose();
     } catch (error) {
       console.error("Lỗi khi cập nhật người dùng:", error);
-      const errorMsg = error.response?.data?.message || "Cập nhật thất bại. Vui lòng thử lại!";
+      const errorMsg =
+        error.response?.data?.message || "Cập nhật thất bại. Vui lòng thử lại!";
       setErrorMessage(errorMsg);
       toast.error(errorMsg, {
         position: "top-right",
         autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
       });
     } finally {
       setLoading(false);
@@ -185,6 +220,37 @@ const UserEdit = ({ open, onClose, userId, onSuccess }) => {
                 fullWidth
                 disabled={loading}
               />
+              <TextField
+                name="imageurl"
+                type="file"
+                onChange={handleImageChange}
+                fullWidth
+                disabled={loading}
+              />
+              {form.imageurl && (
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="h6" color="#1e293b" fontWeight="600">
+                    Ảnh đại diện
+                  </Typography>
+                  <img
+                    src={form.imageurl}
+                    alt="User Avatar"
+                    style={{
+                      width: "100px",
+                      height: "100px",
+                      objectFit: "cover",
+                    }}
+                  />
+                  <Button
+                    color="secondary"
+                    sx={{ mt: 2 }}
+                    onClick={handleRemoveImage} // Khi người dùng nhấn vào nút này
+                    disabled={loading}
+                  >
+                    Xóa ảnh
+                  </Button>
+                </Box>
+              )}
             </Stack>
           )}
         </DialogContent>

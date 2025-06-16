@@ -1,13 +1,36 @@
 import {
+  AccountCircle as AccountCircleIcon,
+  Badge as BadgeIcon,
+  Close as CloseIcon,
+  Delete as DeleteIcon,
+  Edit as EditIcon,
+  Email as EmailIcon,
+  FilterList as FilterListIcon,
+  History as HistoryIcon,
+  People as PeopleIcon,
+  PersonAdd as PersonAddIcon,
+  Phone as PhoneIcon,
+  Search as SearchIcon,
+  Visibility as VisibilityIcon,
+} from "@mui/icons-material";
+import {
+  Avatar,
+  Backdrop,
   Box,
   Button,
+  Card,
+  CardContent,
+  Chip,
   CircularProgress,
+  Divider,
+  Fade,
   FormControl,
+  IconButton,
+  InputAdornment,
   InputLabel,
   MenuItem,
   Modal,
   Pagination,
-  Paper,
   Select,
   Stack,
   Table,
@@ -17,33 +40,9 @@ import {
   TableHead,
   TableRow,
   TextField,
-  Typography,
-  Card,
-  CardContent,
-  Chip,
-  Avatar,
-  IconButton,
   Tooltip,
-  Divider,
-  InputAdornment,
-  Fade,
-  Backdrop,
+  Typography
 } from "@mui/material";
-import {
-  PersonAdd as PersonAddIcon,
-  Search as SearchIcon,
-  Visibility as VisibilityIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  History as HistoryIcon,
-  People as PeopleIcon,
-  Close as CloseIcon,
-  Email as EmailIcon,
-  Phone as PhoneIcon,
-  Badge as BadgeIcon,
-  AccountCircle as AccountCircleIcon,
-  FilterList as FilterListIcon,
-} from "@mui/icons-material";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
@@ -86,10 +85,14 @@ const Users = () => {
       console.error("Error fetching users:", error);
       setUsers([]);
       setFilteredUsers([]);
-      toast.error("Lỗi khi tải danh sách người dùng: " + (error.response?.data?.message || error.message), {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      toast.error(
+        "Lỗi khi tải danh sách người dùng: " +
+          (error.response?.data?.message || error.message),
+        {
+          position: "top-right",
+          autoClose: 3000,
+        }
+      );
     } finally {
       setLoading(false);
     }
@@ -109,9 +112,11 @@ const Users = () => {
     if (searchQuery) {
       filtered = filtered.filter(
         (user) =>
-          (user.fullName && user.fullName.toLowerCase().includes(searchQuery.toLowerCase())) ||
+          (user.fullName &&
+            user.fullName.toLowerCase().includes(searchQuery.toLowerCase())) ||
           (user.phone && user.phone.includes(searchQuery)) ||
-          (user.email && user.email.toLowerCase().includes(searchQuery.toLowerCase()))
+          (user.email &&
+            user.email.toLowerCase().includes(searchQuery.toLowerCase()))
       );
     }
 
@@ -149,10 +154,14 @@ const Users = () => {
         loadUsers();
       } catch (error) {
         console.error("Lỗi khi xóa người dùng:", error);
-        toast.error("Lỗi khi xóa người dùng: " + (error.response?.data?.message || error.message), {
-          position: "top-right",
-          autoClose: 3000,
-        });
+        toast.error(
+          "Lỗi khi xóa người dùng: " +
+            (error.response?.data?.message || error.message),
+          {
+            position: "top-right",
+            autoClose: 3000,
+          }
+        );
       } finally {
         setLoading(false);
       }
@@ -177,7 +186,7 @@ const Users = () => {
   };
 
   const getAccountTypeColor = (isGuest) => {
-    return isGuest 
+    return isGuest
       ? { backgroundColor: "#fef2f2", color: "#dc2626" }
       : { backgroundColor: "#eff6ff", color: "#2563eb" };
   };
@@ -185,8 +194,8 @@ const Users = () => {
   const getInitials = (fullName) => {
     if (!fullName) return "U";
     const names = fullName.split(" ");
-    return names.length > 1 
-      ? names[0][0] + names[names.length - 1][0] 
+    return names.length > 1
+      ? names[0][0] + names[names.length - 1][0]
       : names[0][0];
   };
 
@@ -201,22 +210,22 @@ const Users = () => {
   const totalPages = Math.ceil(filteredUsers.length / rowsPerPage);
 
   return (
-    <Box sx={{ p: 3, backgroundColor: '#f8fafc', minHeight: '100vh' }}>
+    <Box sx={{ p: 3, backgroundColor: "#f8fafc", minHeight: "100vh" }}>
       {/* Header Section */}
       <Box sx={{ mb: 4 }}>
-        <Typography 
-          variant="h4" 
-          component="h1" 
-          sx={{ 
-            fontWeight: 'bold', 
-            color: '#1e293b',
+        <Typography
+          variant="h4"
+          component="h1"
+          sx={{
+            fontWeight: "bold",
+            color: "#1e293b",
             mb: 1,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 2
+            display: "flex",
+            alignItems: "center",
+            gap: 2,
           }}
         >
-          <PeopleIcon sx={{ fontSize: 40, color: '#3b82f6' }} />
+          <PeopleIcon sx={{ fontSize: 40, color: "#3b82f6" }} />
           Quản lý Người dùng
         </Typography>
         <Typography variant="body1" color="text.secondary">
@@ -225,38 +234,61 @@ const Users = () => {
       </Box>
 
       {/* Stats Cards */}
-      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ mb: 3 }}>
-        <Card sx={{ flex: 1, background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' }}>
-          <CardContent sx={{ color: 'white' }}>
-            <Typography variant="h6" sx={{ mb: 1 }}>Tổng người dùng</Typography>
-            <Typography variant="h3" fontWeight="bold">{users.length}</Typography>
-          </CardContent>
-        </Card>
-        <Card sx={{ flex: 1, background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}>
-          <CardContent sx={{ color: 'white' }}>
-            <Typography variant="h6" sx={{ mb: 1 }}>Thành viên</Typography>
+      <Stack direction={{ xs: "column", md: "row" }} spacing={2} sx={{ mb: 3 }}>
+        <Card
+          sx={{
+            flex: 1,
+            background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
+          }}
+        >
+          <CardContent sx={{ color: "white" }}>
+            <Typography variant="h6" sx={{ mb: 1 }}>
+              Tổng người dùng
+            </Typography>
             <Typography variant="h3" fontWeight="bold">
-              {users.filter(u => !u.isGuest).length}
+              {users.length}
             </Typography>
           </CardContent>
         </Card>
-        <Card sx={{ flex: 1, background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' }}>
-          <CardContent sx={{ color: 'white' }}>
-            <Typography variant="h6" sx={{ mb: 1 }}>Khách vãng lai</Typography>
+        <Card
+          sx={{
+            flex: 1,
+            background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+          }}
+        >
+          <CardContent sx={{ color: "white" }}>
+            <Typography variant="h6" sx={{ mb: 1 }}>
+              Thành viên
+            </Typography>
             <Typography variant="h3" fontWeight="bold">
-              {users.filter(u => u.isGuest).length}
+              {users.filter((u) => !u.isGuest).length}
+            </Typography>
+          </CardContent>
+        </Card>
+        <Card
+          sx={{
+            flex: 1,
+            background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
+          }}
+        >
+          <CardContent sx={{ color: "white" }}>
+            <Typography variant="h6" sx={{ mb: 1 }}>
+              Khách vãng lai
+            </Typography>
+            <Typography variant="h3" fontWeight="bold">
+              {users.filter((u) => u.isGuest).length}
             </Typography>
           </CardContent>
         </Card>
       </Stack>
 
       {/* Action Bar */}
-      <Card sx={{ mb: 3, boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+      <Card sx={{ mb: 3, boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}>
         <CardContent>
-          <Stack 
-            direction={{ xs: 'column', md: 'row' }} 
-            spacing={2} 
-            alignItems={{ xs: 'stretch', md: 'center' }}
+          <Stack
+            direction={{ xs: "column", md: "row" }}
+            spacing={2}
+            alignItems={{ xs: "stretch", md: "center" }}
           >
             <Button
               variant="contained"
@@ -264,32 +296,36 @@ const Users = () => {
               onClick={handleOpenAddUser}
               disabled={loading}
               sx={{
-                backgroundColor: '#3b82f6',
-                '&:hover': { backgroundColor: '#2563eb' },
+                backgroundColor: "#3b82f6",
+                "&:hover": { backgroundColor: "#2563eb" },
                 borderRadius: 2,
-                textTransform: 'none',
+                textTransform: "none",
                 fontWeight: 600,
                 px: 3,
-                py: 1.5
+                py: 1.5,
               }}
             >
               Thêm người dùng
             </Button>
-            
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ flex: 1 }}>
-              <FormControl 
-                size="small" 
-                sx={{ 
+
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              spacing={2}
+              sx={{ flex: 1 }}
+            >
+              <FormControl
+                size="small"
+                sx={{
                   minWidth: 200,
-                  '& .MuiOutlinedInput-root': {
+                  "& .MuiOutlinedInput-root": {
                     borderRadius: 2,
-                    backgroundColor: 'white'
-                  }
+                    backgroundColor: "white",
+                  },
                 }}
                 disabled={loading}
               >
                 <InputLabel>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     <FilterListIcon sx={{ fontSize: 16 }} />
                     Lọc theo vai trò
                   </Box>
@@ -305,19 +341,19 @@ const Users = () => {
                   <MenuItem value="Customer">Customer</MenuItem>
                 </Select>
               </FormControl>
-              
+
               <TextField
                 placeholder="Tìm kiếm theo tên, email hoặc số điện thoại..."
                 variant="outlined"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                sx={{ 
+                sx={{
                   flex: 1,
                   minWidth: 300,
-                  '& .MuiOutlinedInput-root': {
+                  "& .MuiOutlinedInput-root": {
                     borderRadius: 2,
-                    backgroundColor: 'white'
-                  }
+                    backgroundColor: "white",
+                  },
                 }}
                 size="small"
                 disabled={loading}
@@ -335,25 +371,41 @@ const Users = () => {
       </Card>
 
       {/* Users Table */}
-      <Card sx={{ boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
+      <Card sx={{ boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)" }}>
         {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 8 }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              py: 8,
+            }}
+          >
             <CircularProgress sx={{ mr: 2 }} />
-            <Typography color="text.secondary">Đang tải danh sách người dùng...</Typography>
+            <Typography color="text.secondary">
+              Đang tải danh sách người dùng...
+            </Typography>
           </Box>
         ) : (
           <>
             <TableContainer>
               <Table sx={{ minWidth: 650 }}>
                 <TableHead>
-                  <TableRow sx={{ backgroundColor: '#f8fafc' }}>
-                    {['ID', 'Người dùng', 'Thông tin liên hệ', 'Vai trò', 'Loại tài khoản', 'Thao tác'].map((header) => (
-                      <TableCell 
+                  <TableRow sx={{ backgroundColor: "#f8fafc" }}>
+                    {[
+                      "ID",
+                      "Người dùng",
+                      "Thông tin liên hệ",
+                      "Vai trò",
+                      "Loại tài khoản",
+                      "Thao tác",
+                    ].map((header) => (
+                      <TableCell
                         key={header}
-                        sx={{ 
-                          fontWeight: 'bold',
-                          color: '#374151',
-                          borderBottom: '2px solid #e5e7eb'
+                        sx={{
+                          fontWeight: "bold",
+                          color: "#374151",
+                          borderBottom: "2px solid #e5e7eb",
                         }}
                       >
                         {header}
@@ -364,62 +416,99 @@ const Users = () => {
                 <TableBody>
                   {paginatedUsers.length > 0 ? (
                     paginatedUsers.map((user) => (
-                      <TableRow 
+                      <TableRow
                         key={user.id}
-                        sx={{ 
-                          '&:hover': { backgroundColor: '#f9fafb' },
-                          '&:nth-of-type(even)': { backgroundColor: '#fdfdfd' }
+                        sx={{
+                          "&:hover": { backgroundColor: "#f9fafb" },
+                          "&:nth-of-type(even)": { backgroundColor: "#fdfdfd" },
                         }}
                       >
                         <TableCell sx={{ fontWeight: 500 }}>
                           #{user.id}
                         </TableCell>
-                        
+
                         <TableCell>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                            <Avatar 
-                              sx={{ 
-                                bgcolor: '#3b82f6',
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 2,
+                            }}
+                          >
+                            <Avatar
+                              sx={{
+                                bgcolor: "#3b82f6",
                                 width: 40,
                                 height: 40,
-                                fontSize: '14px',
-                                fontWeight: 'bold'
+                                fontSize: "14px",
+                                fontWeight: "bold",
                               }}
+                              src={user.imageurl || undefined} // Hiển thị ảnh nếu có, hoặc sử dụng màu nền mặc định
                             >
-                              {getInitials(user.fullName)}
+                              {!user.imageurl && getInitials(user.fullName)} //
+                              Hiển thị chữ cái đại diện nếu không có ảnh
                             </Avatar>
                             <Box>
-                              <Typography variant="subtitle2" fontWeight="600" color="#1e293b">
+                              <Typography
+                                variant="subtitle2"
+                                fontWeight="600"
+                                color="#1e293b"
+                              >
                                 {user.fullName || "Chưa cập nhật"}
                               </Typography>
-                              <Typography variant="body2" color="text.secondary">
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                              >
                                 ID: {user.id}
                               </Typography>
                             </Box>
                           </Box>
                         </TableCell>
-                        
+
                         <TableCell>
                           <Stack spacing={1}>
                             {user.email && (
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <EmailIcon sx={{ fontSize: 16, color: '#6b7280' }} />
-                                <Typography variant="body2" color="text.secondary">
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 1,
+                                }}
+                              >
+                                <EmailIcon
+                                  sx={{ fontSize: 16, color: "#6b7280" }}
+                                />
+                                <Typography
+                                  variant="body2"
+                                  color="text.secondary"
+                                >
                                   {user.email}
                                 </Typography>
                               </Box>
                             )}
                             {user.phone && (
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <PhoneIcon sx={{ fontSize: 16, color: '#6b7280' }} />
-                                <Typography variant="body2" color="text.secondary">
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 1,
+                                }}
+                              >
+                                <PhoneIcon
+                                  sx={{ fontSize: 16, color: "#6b7280" }}
+                                />
+                                <Typography
+                                  variant="body2"
+                                  color="text.secondary"
+                                >
                                   {user.phone}
                                 </Typography>
                               </Box>
                             )}
                           </Stack>
                         </TableCell>
-                        
+
                         <TableCell>
                           <Chip
                             label={user.role || "N/A"}
@@ -427,11 +516,11 @@ const Users = () => {
                             sx={{
                               ...getRoleColor(user.role),
                               fontWeight: 600,
-                              fontSize: '12px'
+                              fontSize: "12px",
                             }}
                           />
                         </TableCell>
-                        
+
                         <TableCell>
                           <Chip
                             label={getAccountType(user.isGuest)}
@@ -439,11 +528,11 @@ const Users = () => {
                             sx={{
                               ...getAccountTypeColor(user.isGuest),
                               fontWeight: 600,
-                              fontSize: '12px'
+                              fontSize: "12px",
                             }}
                           />
                         </TableCell>
-                        
+
                         <TableCell>
                           <Stack direction="row" spacing={1}>
                             <Tooltip title="Xem chi tiết">
@@ -451,50 +540,54 @@ const Users = () => {
                                 size="small"
                                 onClick={() => handleViewUser(user)}
                                 disabled={loading}
-                                sx={{ 
-                                  color: '#3b82f6',
-                                  '&:hover': { backgroundColor: '#dbeafe' }
+                                sx={{
+                                  color: "#3b82f6",
+                                  "&:hover": { backgroundColor: "#dbeafe" },
                                 }}
                               >
                                 <VisibilityIcon fontSize="small" />
                               </IconButton>
                             </Tooltip>
-                            
+
                             <Tooltip title="Chỉnh sửa">
                               <IconButton
                                 size="small"
                                 onClick={() => handleEdit(user.id)}
                                 disabled={loading}
-                                sx={{ 
-                                  color: '#f59e0b',
-                                  '&:hover': { backgroundColor: '#fef3c7' }
+                                sx={{
+                                  color: "#f59e0b",
+                                  "&:hover": { backgroundColor: "#fef3c7" },
                                 }}
                               >
                                 <EditIcon fontSize="small" />
                               </IconButton>
                             </Tooltip>
-                            
+
                             <Tooltip title="Xóa">
                               <IconButton
                                 size="small"
                                 onClick={() => handleDelete(user.id)}
                                 disabled={loading}
-                                sx={{ 
-                                  color: '#ef4444',
-                                  '&:hover': { backgroundColor: '#fee2e2' }
+                                sx={{
+                                  color: "#ef4444",
+                                  "&:hover": { backgroundColor: "#fee2e2" },
                                 }}
                               >
                                 <DeleteIcon fontSize="small" />
                               </IconButton>
                             </Tooltip>
-                            
+
                             <Tooltip title="Lịch sử đặt lịch">
                               <IconButton
                                 size="small"
-                                onClick={() => navigate(`/admin/users/${user.id}/appointments-history`)}
-                                sx={{ 
-                                  color: '#8b5cf6',
-                                  '&:hover': { backgroundColor: '#f3e8ff' }
+                                onClick={() =>
+                                  navigate(
+                                    `/admin/users/${user.id}/appointments-history`
+                                  )
+                                }
+                                sx={{
+                                  color: "#8b5cf6",
+                                  "&:hover": { backgroundColor: "#f3e8ff" },
                                 }}
                               >
                                 <HistoryIcon fontSize="small" />
@@ -507,8 +600,12 @@ const Users = () => {
                   ) : (
                     <TableRow>
                       <TableCell colSpan={6} align="center" sx={{ py: 8 }}>
-                        <Box sx={{ textAlign: 'center', color: 'text.secondary' }}>
-                          <PeopleIcon sx={{ fontSize: 48, mb: 2, opacity: 0.5 }} />
+                        <Box
+                          sx={{ textAlign: "center", color: "text.secondary" }}
+                        >
+                          <PeopleIcon
+                            sx={{ fontSize: 48, mb: 2, opacity: 0.5 }}
+                          />
                           <Typography variant="h6" gutterBottom>
                             Không tìm thấy người dùng
                           </Typography>
@@ -525,7 +622,14 @@ const Users = () => {
 
             {/* Pagination */}
             {filteredUsers.length > 0 && (
-              <Box sx={{ display: 'flex', justifyContent: 'center', p: 2, borderTop: '1px solid #e5e7eb' }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "center",
+                  p: 2,
+                  borderTop: "1px solid #e5e7eb",
+                }}
+              >
                 <Pagination
                   count={totalPages}
                   page={page}
@@ -573,29 +677,31 @@ const Users = () => {
         <Fade in={openViewUser}>
           <Box
             sx={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              width: { xs: '90%', sm: '600px' },
-              maxHeight: '90vh',
-              bgcolor: 'background.paper',
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              width: { xs: "90%", sm: "600px" },
+              maxHeight: "90vh",
+              bgcolor: "background.paper",
               borderRadius: 3,
-              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
-              overflow: 'hidden',
+              boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)",
+              overflow: "hidden",
             }}
           >
             {selectedUser && (
               <>
                 {/* Modal Header */}
-                <Box sx={{ 
-                  p: 3, 
-                  borderBottom: '1px solid #e5e7eb',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  backgroundColor: '#f8fafc'
-                }}>
+                <Box
+                  sx={{
+                    p: 3,
+                    borderBottom: "1px solid #e5e7eb",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    backgroundColor: "#f8fafc",
+                  }}
+                >
                   <Typography variant="h5" fontWeight="bold" color="#1e293b">
                     Chi tiết người dùng
                   </Typography>
@@ -605,34 +711,58 @@ const Users = () => {
                 </Box>
 
                 {/* Modal Content */}
-                <Box sx={{ p: 3, maxHeight: 'calc(90vh - 160px)', overflowY: 'auto' }}>
+                <Box
+                  sx={{
+                    p: 3,
+                    maxHeight: "calc(90vh - 160px)",
+                    overflowY: "auto",
+                  }}
+                >
                   {/* User Avatar & Basic Info */}
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, mb: 3 }}>
-                    <Avatar 
-                      sx={{ 
-                        bgcolor: '#3b82f6',
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 3,
+                      mb: 3,
+                    }}
+                  >
+                    <Avatar
+                      sx={{
+                        bgcolor: "#3b82f6",
                         width: 80,
                         height: 80,
-                        fontSize: '24px',
-                        fontWeight: 'bold'
+                        fontSize: "24px",
+                        fontWeight: "bold",
                       }}
                     >
                       {getInitials(selectedUser.fullName)}
                     </Avatar>
                     <Box>
-                      <Typography variant="h5" fontWeight="bold" color="#1e293b" gutterBottom>
+                      <Typography
+                        variant="h5"
+                        fontWeight="bold"
+                        color="#1e293b"
+                        gutterBottom
+                      >
                         {selectedUser.fullName || "Chưa cập nhật"}
                       </Typography>
                       <Stack direction="row" spacing={1}>
                         <Chip
                           label={selectedUser.role || "N/A"}
                           size="small"
-                          sx={{ ...getRoleColor(selectedUser.role), fontWeight: 600 }}
+                          sx={{
+                            ...getRoleColor(selectedUser.role),
+                            fontWeight: 600,
+                          }}
                         />
                         <Chip
                           label={getAccountType(selectedUser.isGuest)}
                           size="small"
-                          sx={{ ...getAccountTypeColor(selectedUser.isGuest), fontWeight: 600 }}
+                          sx={{
+                            ...getAccountTypeColor(selectedUser.isGuest),
+                            fontWeight: 600,
+                          }}
                         />
                       </Stack>
                     </Box>
@@ -643,12 +773,19 @@ const Users = () => {
                   {/* User Details */}
                   <Stack spacing={3}>
                     <Box>
-                      <Typography variant="h6" fontWeight="600" color="#1e293b" gutterBottom>
+                      <Typography
+                        variant="h6"
+                        fontWeight="600"
+                        color="#1e293b"
+                        gutterBottom
+                      >
                         Thông tin cơ bản
                       </Typography>
                       <Stack spacing={2}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                          <BadgeIcon sx={{ color: '#6b7280' }} />
+                        <Box
+                          sx={{ display: "flex", alignItems: "center", gap: 2 }}
+                        >
+                          <BadgeIcon sx={{ color: "#6b7280" }} />
                           <Box>
                             <Typography variant="body2" color="text.secondary">
                               ID người dùng
@@ -659,8 +796,10 @@ const Users = () => {
                           </Box>
                         </Box>
 
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                          <AccountCircleIcon sx={{ color: '#6b7280' }} />
+                        <Box
+                          sx={{ display: "flex", alignItems: "center", gap: 2 }}
+                        >
+                          <AccountCircleIcon sx={{ color: "#6b7280" }} />
                           <Box>
                             <Typography variant="body2" color="text.secondary">
                               Họ và tên
@@ -676,12 +815,19 @@ const Users = () => {
                     <Divider />
 
                     <Box>
-                      <Typography variant="h6" fontWeight="600" color="#1e293b" gutterBottom>
+                      <Typography
+                        variant="h6"
+                        fontWeight="600"
+                        color="#1e293b"
+                        gutterBottom
+                      >
                         Thông tin liên hệ
                       </Typography>
                       <Stack spacing={2}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                          <EmailIcon sx={{ color: '#6b7280' }} />
+                        <Box
+                          sx={{ display: "flex", alignItems: "center", gap: 2 }}
+                        >
+                          <EmailIcon sx={{ color: "#6b7280" }} />
                           <Box>
                             <Typography variant="body2" color="text.secondary">
                               Email
@@ -692,8 +838,10 @@ const Users = () => {
                           </Box>
                         </Box>
 
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                          <PhoneIcon sx={{ color: '#6b7280' }} />
+                        <Box
+                          sx={{ display: "flex", alignItems: "center", gap: 2 }}
+                        >
+                          <PhoneIcon sx={{ color: "#6b7280" }} />
                           <Box>
                             <Typography variant="body2" color="text.secondary">
                               Số điện thoại
@@ -709,17 +857,28 @@ const Users = () => {
                     {selectedUser.isGuest && (
                       <>
                         <Divider />
-                        <Box sx={{ 
-                          p: 2, 
-                          backgroundColor: '#fef2f2', 
-                          borderRadius: 2,
-                          border: '1px solid #fecaca'
-                        }}>
-                          <Typography variant="body2" color="error.main" fontWeight="500">
+                        <Box
+                          sx={{
+                            p: 2,
+                            backgroundColor: "#fef2f2",
+                            borderRadius: 2,
+                            border: "1px solid #fecaca",
+                          }}
+                        >
+                          <Typography
+                            variant="body2"
+                            color="error.main"
+                            fontWeight="500"
+                          >
                             💡 Lưu ý: Đây là tài khoản khách vãng lai
                           </Typography>
-                          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                            Tài khoản này được tạo tự động khi khách hàng đặt lịch mà không đăng ký thành viên.
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ mt: 0.5 }}
+                          >
+                            Tài khoản này được tạo tự động khi khách hàng đặt
+                            lịch mà không đăng ký thành viên.
                           </Typography>
                         </Box>
                       </>
@@ -728,17 +887,27 @@ const Users = () => {
                 </Box>
 
                 {/* Modal Footer */}
-                <Box sx={{ p: 3, borderTop: '1px solid #e5e7eb', backgroundColor: '#f8fafc' }}>
+                <Box
+                  sx={{
+                    p: 3,
+                    borderTop: "1px solid #e5e7eb",
+                    backgroundColor: "#f8fafc",
+                  }}
+                >
                   <Stack direction="row" spacing={2}>
                     <Button
                       variant="outlined"
-                      onClick={() => navigate(`/admin/users/${selectedUser.id}/appointments-history`)}
+                      onClick={() =>
+                        navigate(
+                          `/admin/users/${selectedUser.id}/appointments-history`
+                        )
+                      }
                       startIcon={<HistoryIcon />}
-                      sx={{ 
+                      sx={{
                         flex: 1,
                         borderRadius: 2,
-                        textTransform: 'none',
-                        fontWeight: 600
+                        textTransform: "none",
+                        fontWeight: 600,
                       }}
                     >
                       Xem lịch sử đặt lịch
@@ -747,12 +916,12 @@ const Users = () => {
                       variant="contained"
                       onClick={handleCloseViewUser}
                       sx={{
-                        backgroundColor: '#3b82f6',
-                        '&:hover': { backgroundColor: '#2563eb' },
+                        backgroundColor: "#3b82f6",
+                        "&:hover": { backgroundColor: "#2563eb" },
                         borderRadius: 2,
-                        textTransform: 'none',
+                        textTransform: "none",
                         fontWeight: 600,
-                        px: 4
+                        px: 4,
                       }}
                     >
                       Đóng
@@ -765,7 +934,7 @@ const Users = () => {
         </Fade>
       </Modal>
 
-      <ToastContainer 
+      <ToastContainer
         position="top-right"
         autoClose={3000}
         hideProgressBar={false}
