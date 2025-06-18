@@ -78,6 +78,9 @@ const resolveReferences = (data, cache = new Map()) => {
 };
 
 const Appointment = () => {
+   useEffect(() => {
+      document.title = "Quản lý lịch hẹn";
+    }, []);
   const location = useLocation();
   const [appointments, setAppointments] = useState([]);
   const [filteredAppointments, setFilteredAppointments] = useState([]);
@@ -100,7 +103,7 @@ const Appointment = () => {
   const [reloadKey, setReloadKey] = useState(0);
   const { enqueueSnackbar } = useSnackbar();
 
-  useEffect(() => {
+useEffect(() => {
     const params = new URLSearchParams(location.search);
     const pageParam = parseInt(params.get("page"), 10);
     if (pageParam && pageParam >= 1 && pageParam <= totalPages)

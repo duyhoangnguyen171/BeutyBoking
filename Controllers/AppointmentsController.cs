@@ -59,6 +59,7 @@ namespace BookingSalonHair.Controllers
                     a.StaffId,
                     a.Status,
                     a.Notes,
+                    a.HasReviewed,
                     CustomerFullName = a.Customer.FullName,
                     StaffFullName = a.Staff.FullName,
                     TimeSlot = new
@@ -204,7 +205,7 @@ namespace BookingSalonHair.Controllers
                     return BadRequest("Khung giờ này đã được đặt cho nhân viên.");
 
                 // Đánh dấu là đã được đặt
-                staffTimeSlot.IsAvailable = false;
+                staffTimeSlot.IsBooked = false;
                 _context.StaffTimeSlots.Update(staffTimeSlot);
             }
 
@@ -296,7 +297,7 @@ namespace BookingSalonHair.Controllers
 
                 if (staffTimeSlot != null)
                 {
-                    staffTimeSlot.IsAvailable = true; // Đặt lại trạng thái khung giờ thành có sẵn
+                    staffTimeSlot.IsBooked = true; // Đặt lại trạng thái khung giờ thành có sẵn
                     _context.StaffTimeSlots.Update(staffTimeSlot);
                 }
 

@@ -5,6 +5,9 @@ import "../../asset/styles/appointment/AppointmentCanceled.css";
 import AppointmentService from "../../services/AppointmentService";
 
 const AppointmentCanceled = () => {
+   useEffect(() => {
+    document.title = "Lịch hẹn đã hủy";
+  }, []);
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
 

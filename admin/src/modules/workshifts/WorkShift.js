@@ -41,6 +41,9 @@ import "react-toastify/dist/ReactToastify.css";
 import WorkShiftService from "../../services/WorkShiftService";
 
 const Workshift = () => {
+  useEffect(() => {
+      document.title = "Ca làm";
+    }, []);
   const navigate = useNavigate();
   const [shifts, setShifts] = useState([]);
   const [filteredShifts, setFilteredShifts] = useState([]);

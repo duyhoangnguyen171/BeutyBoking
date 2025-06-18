@@ -2,15 +2,17 @@ import React from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import "../../index.css";
 import Sidebar from "./Sidebar";
+import { useEffect, useState } from "react";
 
 const AdminPanel = () => {
+  useEffect(() => {
+    document.title = "Trang quản lý";
+  }, []);
+  
   const navigate = useNavigate();
 
   // const handleLogout = () => {
-  //   // Xóa token khỏi localStorage
   //   localStorage.removeItem("token");
-
-  //   // Chuyển hướng về trang đăng nhập
   //   navigate("/login");
   // };
 
@@ -18,12 +20,17 @@ const AdminPanel = () => {
     <div className="admin-layout">
       <Sidebar />
       <div className="admin-content">
-        {/* Nút đăng xuất */}
-        {/* <button onClick={handleLogout} className="logout-btn">
-          Đăng xuất
-        </button>
-         */}
-        <Outlet />
+        {/* Optional header bar */}
+        {/* <div className="admin-header">
+          <button onClick={handleLogout} className="logout-btn">
+            Đăng xuất
+          </button>
+        </div> */}
+        
+        {/* Outlet wrapper with proper overflow handling */}
+        <div className="outlet-container">
+          <Outlet />
+        </div>
       </div>
     </div>
   );

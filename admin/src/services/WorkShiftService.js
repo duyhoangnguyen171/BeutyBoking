@@ -82,15 +82,15 @@ const WorkShiftService = {
   },
 
   // Gán nhân viên vào ca làm
-  assignStaff: async (shiftId, appointmentId, staffId) => {
+  assignStaff: async (appointmentId, newStaffId) => {
     try {
-      await axios.post(
-        `${API_URL}/${shiftId}/assign`,
-        { appointmentId, staffId },
-        getAuthHeader()
+      // Đảm bảo URL là chính xác và sử dụng query parameters
+      await axios.put(
+        `${BASE_URL}/UserWorkShift/AssignStaff?appointmentId=${appointmentId}&newStaffId=${newStaffId}`,
+        getAuthHeader()  // Cung cấp header xác thực nếu cần
       );
     } catch (error) {
-      console.error("❌ Lỗi khi gán nhân viên:", error);
+      console.error("Lỗi khi gán nhân viên:", error);
       throw error;
     }
   },
@@ -107,6 +107,15 @@ const WorkShiftService = {
 
     return response.data;
   },
+   getAvailableStaff : async (timeSlotId) => {
+  try {
+    const response = await axios.get(`/api/StaffTimeSlots/GetAvailableStaff/${timeSlotId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching available staff:', error);
+    throw error;
+  }
+},
 
   // Lấy ca làm theo StaffId
   getByStaffId: async (staffId) => {

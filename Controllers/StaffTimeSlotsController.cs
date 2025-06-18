@@ -9,7 +9,7 @@ namespace BookingSalonHair.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "staff,admin")]
+    //[Authorize(Roles = "staff,admin")]
     public class StaffTimeSlotssController : ControllerBase
     {
         private readonly SalonContext _context;
@@ -48,6 +48,39 @@ namespace BookingSalonHair.Controllers
             await _context.SaveChangesAsync();
 
             return Ok(new { message = "Đăng ký slot thành công." });
+        }
+        [HttpGet("GetAvailableStaff/{timeSlotId}")]
+        public async Task<IActionResult> GetAvailableStaff(int timeSlotId)
+        {
+            try
+            {
+                // Chỉ lấy những nhân viên có IsBooked = true (trống lịch, có thể gán)
+                var availableStaff = await _context.StaffTimeSlots
+                    .Where(sts => sts.TimeSlotId == timeSlotId &&
+                                 sts.IsBooked == true &&  // Chỉ lấy nhân viên trống lịch
+                                 sts.IsAvailable == true) // Và có sẵn sàng làm việc
+                    .Include(sts => sts.Staff)
+                    .Select(sts => new
+                    {
+                        Id = sts.StaffId,
+                        FullName = sts.Staff.FullName,
+                        Email = sts.Staff.Email,
+                        IsBooked = sts.IsBooked,
+                        IsAvailable = sts.IsAvailable
+                    })
+                    .ToListAsync();
+
+                return Ok(new
+                {
+                    TimeSlotId = timeSlotId,
+                    AvailableStaffCount = availableStaff.Count,
+                    Staffs = availableStaff
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Có lỗi xảy ra: {ex.Message}");
+            }
         }
 
         // GET: api/StaffTimeSlotss/staff/{staffId}/date/{date}

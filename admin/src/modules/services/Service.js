@@ -45,6 +45,9 @@ import ServiceAdd from "./ServiceAdd";
 import ServiceEdit from "./ServiceEdit";
 
 const Services = () => {
+  useEffect(() => {
+      document.title = "Dịch vụ";
+    }, []);
   const [services, setServices] = useState([]);
   const [filteredServices, setFilteredServices] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");

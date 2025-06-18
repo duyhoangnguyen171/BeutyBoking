@@ -54,7 +54,6 @@ const NewsAdd = ({ open, onClose, onSuccess }) => {
         theme: "colored",
       });
 
-      console.log("Thêm tin tức thành công:", response.data);
       setFormData({ title: "", content: "", imageurl: "" });
       setFile(null);
       inpRef.current.value = "";

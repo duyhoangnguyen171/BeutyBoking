@@ -1,6 +1,6 @@
 /* Sidebar Container */
 .sidebar {
-  position: fixed;
+  position: fixed; /* Giữ fixed cho tất cả breakpoints */
   top: 0;
   left: 0;
   height: 100vh;
@@ -307,12 +307,11 @@
   display: none;
 }
 
-/* Responsive Design */
+/* Responsive Design - FIX CHÍNH TẠI ĐÂY */
 @media (min-width: 768px) {
   .sidebar {
-    position: relative;
-    transform: translateX(0);
-    box-shadow: none;
+    /* GIỮ position: fixed thay vì relative */
+    transform: translateX(0); /* Luôn hiển thị trên desktop */
     border-right: 1px solid rgba(255, 255, 255, 0.1);
   }
 
@@ -349,6 +348,35 @@
     justify-content: flex-start;
     padding: 0.75rem 1rem;
   }
+}
+
+/* CSS cho Main Content để không bị che bởi sidebar */
+.main-content {
+  margin-left: 0; /* Mặc định không có margin trên mobile */
+  min-height: 100vh;
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Desktop - thêm margin để tránh sidebar */
+@media (min-width: 768px) {
+  .main-content {
+    margin-left: 280px; /* Bằng với width của sidebar */
+  }
+  
+  .main-content.sidebar-collapsed {
+    margin-left: 70px; /* Bằng với width của sidebar collapsed */
+  }
+}
+
+/* Content wrapper */
+.content-wrapper {
+  padding: 1rem;
+}
+
+/* App layout wrapper */
+.app-layout {
+  display: flex;
+  min-height: 100vh;
 }
 
 /* Focus states for accessibility */

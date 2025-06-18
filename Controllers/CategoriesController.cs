@@ -23,6 +23,7 @@ public class CategoriesController : ControllerBase
         {
             Id = c.Id,
             Name = c.Name,
+            imageurl = c.imgarurl,
             Services = c.Services.Select(s => new ServiceDTO
             {
                 Id = s.Id,
@@ -57,7 +58,8 @@ public class CategoriesController : ControllerBase
 
         var category = new Category
         {
-            Name = categoryDto.Name
+            Name = categoryDto.
+            imageurl = categoryDto.imageurl
         };
 
         var createdCategory = await _categoriesService.CreateAsync(category);

@@ -21,10 +21,15 @@ import Service from "./modules/services/Service";
 import Users from "./modules/users/Users";
 import WorkShift from "./modules/workshifts/WorkShift";
 
+import Category from "./modules/categories/Category";
+import CategoryAdd from "./modules/categories/CategoryAdd";
+
 import NewsAdd from "./modules/news/NewsAdd";
 import NewsEdit from "./modules/news/NewsEdit";
 
 import Banner from "./modules/banners/Banner";
+import BannerAdd from "./modules/banners/BannerAdd";
+import BannerEdit from "./modules/banners/BannerEdit";
 
 
 import UserAdd from "./modules/users/UserAdd";
@@ -63,10 +68,15 @@ const App = () => {
               <Route path="appointments" element={<Appointment />} />
               <Route path="services" element={<Service />} />
               <Route path="contact" element={<Contact />} />
+              <Route path="categories" element={<Category />} />
+              <Route path="categories/add" element={<CategoryAdd />} />
+               
               <Route path="news" element={<New />} />
               <Route path="newsadd" element={<NewsAdd />} />
               <Route path="newsedit" element={<NewsEdit />} />
                <Route path="banners" element={<Banner />} />
+                <Route path="banners/add" element={<BannerAdd />} />
+                <Route path="banners/edit" element={<BannerEdit />} />
               <Route path="workshifts" element={<WorkShift />} />
               <Route path="users/add" element={<UserAdd />} />
               <Route path="users/edit" element={<UserEdit />} />

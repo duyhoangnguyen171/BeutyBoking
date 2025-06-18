@@ -33,7 +33,8 @@ namespace BookingSalonHair.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetWorkShift(int id)
         {
-            var shift = await _context.WorkShifts.AsNoTracking()
+            var shift = await _context.WorkShifts
+                .AsNoTracking()
                 .Where(w => w.Id == id)
                 .Select(w => new
                 {
@@ -41,21 +42,37 @@ namespace BookingSalonHair.Controllers
                     Appointments = w.Appointments.Select(a => new
                     {
                         a.Id,
-                        a.ServiceId,
                         a.StaffId,
+                        StaffName = a.Staff.FullName,
                         CustomerName = a.Customer.FullName,
-                        StaffName = a.Staff.FullName
+                        a.AppointmentDate,
+                        TimeSlotStart = _context.StaffTimeSlots
+                            .Where(sts => sts.Id == a.StaffTimeSlotId)
+                            .Select(sts => sts.TimeSlot.StartTime)
+                            .FirstOrDefault(),
+                        TimeSlotEnd = _context.StaffTimeSlots
+                            .Where(sts => sts.Id == a.StaffTimeSlotId)
+                            .Select(sts => sts.TimeSlot.EndTime)
+                            .FirstOrDefault(),
+                        Services = _context.AppointmentServices
+                            .Where(x => x.AppointmentId == a.Id)
+                            .Select(x => new
+                            {
+                                x.ServiceId,
+                                ServiceName = x.Service.Name
+                            }).ToList()
                     }),
-                    RegisteredStaffs = w.UserWorkShifts.Select(uw => new
+                    RegisteredStaffs = w.UserWorkShifts.Select(u => new
                     {
-                        uw.User.Id,
-                        uw.User.FullName,
-                        uw.IsApproved
+                        u.User.Id,
+                        u.User.FullName,
+                        u.IsApproved
                     })
                 })
                 .FirstOrDefaultAsync();
 
-            if (shift == null) return NotFound();
+            if (shift == null)
+                return NotFound();
 
             var result = new WorkShiftDetailDTO
             {
@@ -67,10 +84,17 @@ namespace BookingSalonHair.Controllers
                 Appointments = shift.Appointments.Select(a => new WorkShiftAppointmentDTO
                 {
                     Id = a.Id,
-                    ServiceId = a.ServiceId,
+                    StaffId = (int)a.StaffId,
+                    StaffName = a.StaffName,
                     CustomerName = a.CustomerName,
-                    StaffId = a.StaffId,
-                    StaffName = a.StaffName
+                    AppointmentDate = a.AppointmentDate,
+                    TimeSlotStart = a.TimeSlotStart,
+                    TimeSlotEnd = a.TimeSlotEnd,
+                    Services = a.Services.Select(s => new ServiceInfoDTO
+                    {
+                        ServiceId = s.ServiceId,
+                        ServiceName = s.ServiceName
+                    }).ToList()
                 }).ToList(),
                 RegisteredStaffs = shift.RegisteredStaffs.Select(u => new SimpleUserDTO
                 {
@@ -82,6 +106,8 @@ namespace BookingSalonHair.Controllers
 
             return Ok(result);
         }
+
+
 
         [HttpPost]
         [Authorize(Roles = "admin")]

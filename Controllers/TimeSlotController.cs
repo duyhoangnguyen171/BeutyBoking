@@ -14,7 +14,7 @@ namespace BookingSalonHair.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "admin,staff")]
+    //[Authorize(Roles = "admin,staff")]
     public class TimeSlotsController : ControllerBase
     {
         private readonly SalonContext _db;

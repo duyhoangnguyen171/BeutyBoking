@@ -1,9 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { login, setAuthToken } from "../../services/customDataProvider";
 import "../../asset/styles/auth/login.css"; // Import CSS
 
 const LoginForm = () => {
+   useEffect(() => {
+    document.title = "Login";
+  }, []);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();

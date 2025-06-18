@@ -1,11 +1,11 @@
 /* CSS Variables for Consistency */
 :root {
-  --primary-color: #2c3e50; /* Darker, professional primary color */
-  --accent-color: #3498db; /* Vibrant blue for active/hover states */
-  --sidebar-bg: #f8f9fa; /* Light, clean sidebar background */
-  --text-color: #333; /* Neutral text color */
-  --text-light: #666; /* Lighter text for secondary elements */
-  --border-color: #e0e0e0; /* Subtle border color */
+  --primary-color: #2c3e50;
+  --accent-color: #3498db;
+  --sidebar-bg: #f8f9fa;
+  --text-color: #333;
+  --text-light: #666;
+  --border-color: #e0e0e0;
   --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   --transition: all 0.3s ease;
 }
@@ -13,15 +13,15 @@
 /* Reset and Global Styles */
 body {
   margin: 0;
-  font-family: 'Inter', 'Segoe UI', sans-serif; /* Modern font stack */
+  font-family: 'Inter', 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
-  background-color: #f4f6f9; /* Light background for the app */
+  background-color: #f4f6f9;
 }
 
 code {
-  font-family: 'Fira Code', 'Consolas', monospace; /* Modern code font */
+  font-family: 'Fira Code', 'Consolas', monospace;
 }
 
 /* Utility Classes */
@@ -76,42 +76,20 @@ code {
 }
 
 .rounded {
-  border-radius: 0.375rem; /* Slightly larger for modern look */
+  border-radius: 0.375rem;
 }
 
-/* Admin Layout */
+/* FIXED: Admin Layout using Flexbox */
 .admin-layout {
   display: flex;
-  min-height: 100vh;
+  height: 100vh; /* Fixed height to prevent overflow */
   width: 100%;
-  position: relative;
+  overflow: hidden; /* Prevent body scroll */
 }
 
-/* Sidebar Styles */
-.sidebar {
-  width: 280px; /* Slightly wider for better spacing */
-  background: linear-gradient(180deg, var(--sidebar-bg), #e8ecef); /* Subtle gradient */
-  color: var(--text-color);
-  padding: 1.5rem 0;
-  top: 0;
-  left: 0;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  box-shadow: var(--shadow);
-  z-index: 1000;
-  transition: width 0.3s ease; /* Smooth width transition for responsiveness */
-  overflow-y: auto;
-}
+/* FIXED: Sidebar Styles */
 
-.sidebar h2 {
-  font-size: 1.75rem; /* Larger, bolder title */
-  font-weight: 700;
-  color: var(--accent-color);
-  margin: 0 0 1.5rem 1rem;
-  padding-left: 1rem;
-  letter-spacing: 0.5px;
-}
+
 
 .nav-item {
   color: var(--text-color);
@@ -134,7 +112,7 @@ code {
 .nav-item:hover {
   background-color: var(--accent-color);
   color: white;
-  transform: translateX(5px); /* Subtle slide effect on hover */
+  transform: translateX(5px);
 }
 
 .nav-item.active {
@@ -145,44 +123,34 @@ code {
 
 .nav-item:focus {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.3); /* Accessible focus state */
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.3);
 }
 
-/* Content Area */
+/* FIXED: Content Area */
 .admin-content {
+  flex: 1; /* Take remaining space */
+  display: flex;
+  flex-direction: column;
+  background-color: #fff;
+  overflow: hidden; /* Prevent content overflow */
+  /* Remove margin-left and padding to prevent overflow */
+}
+
+/* NEW: Outlet Container */
+.outlet-container {
+  margin-left: 250px;
   flex: 1;
+  overflow-y: auto; /* Allow scrolling within outlet content */
+  overflow-x: hidden;
   padding: 2rem;
   box-sizing: border-box;
-  background-color: #fff;
-  min-height: 100vh;
-  transition: margin-left 0.3s ease;
 }
 
 /* Logout Button */
-.logout-btn {
-  padding: 0.75rem 1.5rem;
-  background-color: #e3342f;
-  color: white;
-  border: none;
-  cursor: pointer;
-  top: 1.5rem;
-  right: 1.5rem;
-  font-size: 1rem;
-  font-weight: 500;
-  border-radius: 6px;
-  z-index: 2000;
-  transition: var(--transition);
-}
 
-.logout-btn:hover {
-  background-color: #c53030;
-  transform: scale(1.05); /* Subtle scale effect */
-}
 
-.logout-btn:focus {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.3);
-}
+
+
 
 /* User Table Styles */
 .users-container {
@@ -208,7 +176,7 @@ code {
 .users-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 700px; /* Adjusted for better table layout */
+  min-width: 700px;
 }
 
 .users-table th,
@@ -273,16 +241,9 @@ code {
   font-weight: 500;
 }
 
-/* Responsive Adjustments */
+/* FIXED: Responsive Adjustments */
 @media (max-width: 1024px) {
-  .sidebar {
-    width: 220px;
-  }
-
-  .admin-content {
-    margin-left: 220px;
-  }
-
+  
   .nav-item {
     font-size: 1rem;
     padding: 0.6rem 1rem;
@@ -290,38 +251,31 @@ code {
 }
 
 @media (max-width: 768px) {
-  .sidebar {
-    width: 80px; /* Collapsed sidebar */
+  .admin-layout {
+    flex-direction: column;
+    height: auto;
+    min-height: 100vh;
   }
 
-  .sidebar h2 {
-    font-size: 0; /* Hide title text */
-    margin: 0;
-    height: 40px;
-   /* background: url('/logo.png') no-repeat center; /* Optional: Add a logo */
-    background-size: 40px;
-  }
+
+
+
 
   .nav-item {
-    padding: 0.75rem;
-    justify-content: center;
-  }
-
-  .nav-item svg {
-    margin-right: 0;
-    font-size: 1.5rem;
-  }
-
-  .nav-item span {
-    display: none; /* Hide text in collapsed mode */
+    white-space: nowrap;
+    margin: 0 0.25rem;
   }
 
   .admin-content {
-    margin-left: 80px;
+    height: auto;
+  }
+
+  .outlet-container {
     padding: 1.5rem;
   }
 
   .logout-btn {
+    position: fixed;
     top: 1rem;
     right: 1rem;
     padding: 0.5rem 1rem;
@@ -329,12 +283,7 @@ code {
 }
 
 @media (max-width: 576px) {
-  .sidebar {
-    width: 60px;
-  }
-
-  .admin-content {
-    margin-left: 60px;
+  .outlet-container {
     padding: 1rem;
   }
 

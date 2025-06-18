@@ -26,7 +26,25 @@ namespace BookingSalonHair.Controllers
             _emailHelper = emailHelper;
 
         }
+        [HttpGet("GetAvailableDatesByStaff/{staffId}")]
+        public async Task<ActionResult<IEnumerable<DateTime>>> GetAvailableDatesByStaff(int staffId)
+        {
+            // Lấy các lịch làm việc của nhân viên từ bảng UserWorkShifts
+            var availableDates = await _context.UserWorkShifts
+                .Where(uws => uws.UserId == staffId)  // Lọc theo nhân viên
+                .Select(uws => uws.WorkShift.Date.Date)  // Lấy ngày của lịch làm việc
+                .Distinct()  // Loại bỏ các ngày trùng lặp
+                .ToListAsync();
 
+            // Kiểm tra nếu không có ngày nào
+            if (!availableDates.Any())
+            {
+                return NotFound(new { message = "Nhân viên này không có lịch làm việc." });
+            }
+
+            // Trả về danh sách ngày có sẵn
+            return Ok(availableDates);
+        }
         // GET: api/Users
         [HttpGet]
         [Authorize(Roles = "admin,staff,customer")]
@@ -56,17 +74,17 @@ namespace BookingSalonHair.Controllers
 
         // GET: api/Users/5
         [HttpGet("{id}")]
-        [Authorize(Roles = "admin,customer,staff")]
+        //[Authorize(Roles = "admin,customer,staff")]
         public async Task<ActionResult<User>> GetUser(int id)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier); // Lấy ID của người dùng hiện tại từ token
-            var currentUserId = int.Parse(userId);
+            //var userId = User.FindFirstValue(ClaimTypes.NameIdentifier); // Lấy ID của người dùng hiện tại từ token
+            //var currentUserId = int.Parse(userId);
 
-            // Nếu không phải admin, chỉ được xem thông tin của chính mình
-            if (!User.IsInRole("admin") && currentUserId != id)
-            {
-                return Forbid("Bạn không có quyền xem thông tin của người dùng này.");
-            }
+            //// Nếu không phải admin, chỉ được xem thông tin của chính mình
+            //if (!User.IsInRole("admin") && currentUserId != id)
+            //{
+            //    return Forbid("Bạn không có quyền xem thông tin của người dùng này.");
+            //}
 
             var user = await _context.Users.FindAsync(id);
             if (user == null)
@@ -74,7 +92,22 @@ namespace BookingSalonHair.Controllers
 
             return user;
         }
+        [HttpGet("staff/{staffId}/details")]
+        public async Task<ActionResult> GetStaffDetails(int staffId)
+        {
+            var staff = await _context.Users.FindAsync(staffId);
+            if (staff == null)
+                return NotFound("Nhân viên không tồn tại.");
 
+            var staffDetails = new UserDetailsDTO
+            {
+                FullName = staff.FullName,
+                Profile = staff.Profile,
+                ImageUrl = staff.imageurl
+            };
+
+            return Ok(staffDetails);
+        }
         // PUT: api/Users/5
         [HttpPost("PutUser")]
         [Authorize(Roles = "admin")]

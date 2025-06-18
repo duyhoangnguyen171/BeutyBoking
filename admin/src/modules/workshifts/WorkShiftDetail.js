@@ -4,7 +4,6 @@ import {
   Box,
   Card,
   CardContent,
-  CardActions,
   Container,
   Typography,
   Grid,
@@ -39,8 +38,6 @@ import {
   Group,
   Business,
   AccessTime,
-  Phone,
-  Email,
   Refresh,
   Info,
 } from "@mui/icons-material";
@@ -54,8 +51,15 @@ const WorkShiftDetail = () => {
   const [assigning, setAssigning] = useState(false);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [availableStaffs, setAvailableStaffs] = useState({});
+const [loadingStaffs, setLoadingStaffs] = useState({});
   const [selectedStaff, setSelectedStaff] = useState({});
-  const [confirmDialog, setConfirmDialog] = useState({ open: false, userId: null, userName: '' });
+  const [confirmDialog, setConfirmDialog] = useState({
+    
+    open: false,
+    userId: null,
+    userName: "",
+  });
 
   useEffect(() => {
     fetchData();
@@ -65,7 +69,6 @@ const WorkShiftDetail = () => {
     setLoading(true);
     try {
       const result = await WorkShiftService.getById(shiftId);
-      console.log("API trả về:", result);
       setData(result);
       setError(null);
     } catch (error) {
@@ -76,17 +79,44 @@ const WorkShiftDetail = () => {
       setLoading(false);
     }
   };
+const fetchAvailableStaffs = async (timeSlotId, appointmentId) => {
+  if (availableStaffs[appointmentId]) return; // Đã load rồi thì không load lại
 
+  setLoadingStaffs(prev => ({ ...prev, [appointmentId]: true }));
+  
+  try {
+    const response = await WorkShiftService.getAvailableStaff(timeSlotId);
+    setAvailableStaffs(prev => ({
+      ...prev,
+      [appointmentId]: response.staffs || []
+    }));
+  } catch (error) {
+    console.error('Không thể tải danh sách nhân viên khả dụng:', error);
+    toast.error('Không thể tải danh sách nhân viên khả dụng');
+    setAvailableStaffs(prev => ({
+      ...prev,
+      [appointmentId]: []
+    }));
+  } finally {
+    setLoadingStaffs(prev => ({ ...prev, [appointmentId]: false }));
+  }
+};
   const assignStaff = async (appointmentId, staffId) => {
     if (!staffId) return;
     setAssigning(true);
     try {
-      await WorkShiftService.assignStaff(shiftId, appointmentId, staffId);
+      // Gọi API với PUT và các tham số trong query string
+      await WorkShiftService.assignStaff(appointmentId, staffId);
+
       setError(null);
       toast.success("Gán nhân viên thành công!");
+
+      // Cập nhật lại dữ liệu sau khi gán
       const updated = await WorkShiftService.getById(shiftId);
       setData(updated);
-      setSelectedStaff(prev => ({ ...prev, [appointmentId]: '' }));
+
+      // Reset lại trạng thái lựa chọn nhân viên
+      setSelectedStaff((prev) => ({ ...prev, [appointmentId]: "" }));
     } catch (err) {
       setError("Lỗi khi gán nhân viên.");
       toast.error("Lỗi khi gán nhân viên.");
@@ -105,7 +135,7 @@ const WorkShiftDetail = () => {
       setData(updated);
       setError(null);
       toast.success("Nhân viên đã được duyệt thành công!");
-      setConfirmDialog({ open: false, userId: null, userName: '' });
+      setConfirmDialog({ open: false, userId: null, userName: "" });
     } catch (err) {
       console.error("Lỗi khi duyệt nhân viên:", err);
       setError("Lỗi khi duyệt nhân viên.");
@@ -126,7 +156,7 @@ const WorkShiftDetail = () => {
   };
 
   const handleStaffSelectChange = (appointmentId, staffId) => {
-    setSelectedStaff(prev => ({ ...prev, [appointmentId]: staffId }));
+    setSelectedStaff((prev) => ({ ...prev, [appointmentId]: staffId }));
   };
 
   if (loading) {
@@ -170,7 +200,9 @@ const WorkShiftDetail = () => {
       <Container maxWidth="xl" sx={{ py: 4 }}>
         <Alert severity="error" sx={{ borderRadius: 3 }}>
           <Typography variant="h6">Không thể tải dữ liệu</Typography>
-          <Typography>Vui lòng thử lại sau hoặc liên hệ quản trị viên.</Typography>
+          <Typography>
+            Vui lòng thử lại sau hoặc liên hệ quản trị viên.
+          </Typography>
         </Alert>
       </Container>
     );
@@ -178,25 +210,33 @@ const WorkShiftDetail = () => {
 
   const appointments = data.appointments?.$values ?? [];
   const registeredStaffs = data.registeredStaffs?.$values ?? [];
-  const approvedStaffs = registeredStaffs.filter(staff => staff.isApproved);
-  const pendingStaffs = registeredStaffs.filter(staff => !staff.isApproved);
+  const approvedStaffs = registeredStaffs.filter((staff) => staff.isApproved);
+  const pendingStaffs = registeredStaffs.filter((staff) => !staff.isApproved);
 
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
       {/* Header Section */}
-      <Paper 
-        elevation={0} 
-        sx={{ 
-          p: 4, 
-          mb: 4, 
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: 'white',
-          borderRadius: 4
+      <Paper
+        elevation={0}
+        sx={{
+          p: 4,
+          mb: 4,
+          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          color: "white",
+          borderRadius: 4,
         }}
       >
-        <Stack direction="row" justifyContent="space-between" alignItems="center">
+        <Stack
+          direction="row"
+          justifyContent="space-between"
+          alignItems="center"
+        >
           <Box>
-            <Typography variant="h4" component="h1" sx={{ fontWeight: 700, mb: 1 }}>
+            <Typography
+              variant="h4"
+              component="h1"
+              sx={{ fontWeight: 700, mb: 1 }}
+            >
               Chi tiết ca làm việc
             </Typography>
             <Typography variant="subtitle1" sx={{ opacity: 0.9 }}>
@@ -204,12 +244,12 @@ const WorkShiftDetail = () => {
             </Typography>
           </Box>
           <Tooltip title="Làm mới dữ liệu">
-            <IconButton 
-              onClick={fetchData} 
-              sx={{ 
-                bgcolor: 'rgba(255,255,255,0.2)', 
-                color: 'white',
-                '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' }
+            <IconButton
+              onClick={fetchData}
+              sx={{
+                bgcolor: "rgba(255,255,255,0.2)",
+                color: "white",
+                "&:hover": { bgcolor: "rgba(255,255,255,0.3)" },
               }}
             >
               <Refresh />
@@ -229,7 +269,11 @@ const WorkShiftDetail = () => {
       {assigning && (
         <Box sx={{ mb: 3 }}>
           <LinearProgress />
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1, textAlign: 'center' }}>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ mt: 1, textAlign: "center" }}
+          >
             Đang xử lý...
           </Typography>
         </Box>
@@ -242,11 +286,15 @@ const WorkShiftDetail = () => {
             <CardContent sx={{ p: 0 }}>
               <Box sx={{ p: 3, pb: 2 }}>
                 <Stack direction="row" alignItems="center" spacing={2}>
-                  <Avatar sx={{ bgcolor: 'primary.main' }}>
+                  <Avatar sx={{ bgcolor: "primary.main" }}>
                     <Assignment />
                   </Avatar>
                   <Box>
-                    <Typography variant="h5" component="h2" sx={{ fontWeight: 600 }}>
+                    <Typography
+                      variant="h5"
+                      component="h2"
+                      sx={{ fontWeight: 600 }}
+                    >
                       Danh sách lịch hẹn
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
@@ -255,12 +303,14 @@ const WorkShiftDetail = () => {
                   </Box>
                 </Stack>
               </Box>
-              
+
               <Divider />
 
               {appointments.length === 0 ? (
-                <Box sx={{ p: 6, textAlign: 'center' }}>
-                  <Schedule sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+                <Box sx={{ p: 6, textAlign: "center" }}>
+                  <Schedule
+                    sx={{ fontSize: 64, color: "text.secondary", mb: 2 }}
+                  />
                   <Typography variant="h6" color="text.secondary">
                     Chưa có lịch hẹn nào
                   </Typography>
@@ -273,68 +323,176 @@ const WorkShiftDetail = () => {
                   <Grid container spacing={3}>
                     {appointments.map((appt) => (
                       <Grid item xs={12} key={appt.id}>
-                        <Card 
-                          variant="outlined" 
-                          sx={{ 
+                        <Card
+                          variant="outlined"
+                          sx={{
                             borderRadius: 2,
-                            transition: 'all 0.2s ease-in-out',
-                            '&:hover': { 
+                            transition: "all 0.2s ease-in-out",
+                            "&:hover": {
                               boxShadow: 4,
-                              transform: 'translateY(-2px)'
-                            }
+                              transform: "translateY(-2px)",
+                            },
                           }}
                         >
                           <CardContent>
                             <Grid container spacing={3} alignItems="center">
                               <Grid item xs={12} md={6}>
                                 <Stack spacing={2}>
-                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                  <Box
+                                    sx={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: 1,
+                                    }}
+                                  >
                                     <Person color="primary" />
-                                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                                      {renderName(appt.customerName) || "Chưa có thông tin"}
+                                    <Typography
+                                      variant="h6"
+                                      sx={{ fontWeight: 600 }}
+                                    >
+                                      {renderName(appt.customerName) ||
+                                        "Chưa có thông tin"}
                                     </Typography>
                                   </Box>
-                                  
-                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+
+                                  <Box
+                                    sx={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: 1,
+                                    }}
+                                  >
                                     <Business fontSize="small" color="action" />
-                                    <Typography variant="body2" color="text.secondary">
-                                      Nhân viên phụ trách: {renderName(appt.staffName) || "Chưa gán"}
+                                    <Typography
+                                      variant="body2"
+                                      color="text.secondary"
+                                    >
+                                      Nhân viên phụ trách:{" "}
+                                      {renderName(appt.staffName) || "Chưa gán"}
                                     </Typography>
+                                  </Box>
+
+                                  <Box sx={{ mt: 2 }}>
+                                    <Stack
+                                      direction="row"
+                                      alignItems="center"
+                                      spacing={1}
+                                    >
+                                      <AccessTime color="action" />
+                                      <Typography
+                                        variant="body2"
+                                        color="text.secondary"
+                                      >
+                                        Ngày hẹn:{" "}
+                                        {new Date(
+                                          appt.appointmentDate
+                                        ).toLocaleDateString("vi-VN")}
+                                      </Typography>
+                                    </Stack>
+
+                                    <Stack
+                                      direction="row"
+                                      alignItems="center"
+                                      spacing={1}
+                                      sx={{ mt: 1 }}
+                                    >
+                                      <Schedule color="action" />
+                                      <Typography
+                                        variant="body2"
+                                        color="text.secondary"
+                                      >
+                                        Khung giờ: {appt.timeSlotStart} -{" "}
+                                        {appt.timeSlotEnd}
+                                      </Typography>
+                                    </Stack>
+
+                                    <Stack
+                                      direction="row"
+                                      alignItems="center"
+                                      spacing={1}
+                                      sx={{ mt: 1 }}
+                                    >
+                                      <Assignment color="action" />
+                                      <Typography
+                                        variant="body2"
+                                        color="text.secondary"
+                                      >
+                                        Dịch vụ:{" "}
+                                        {appt.services?.$values
+                                          ?.map((s) => s.serviceName)
+                                          .join(", ") || "Không có"}
+                                      </Typography>
+                                    </Stack>
                                   </Box>
                                 </Stack>
                               </Grid>
-                              
+
                               <Grid item xs={12} md={6}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                <Box
+                                  sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 2,
+                                  }}
+                                >
                                   <FormControl fullWidth size="small">
                                     <InputLabel>Gán nhân viên</InputLabel>
                                     <Select
-                                      value={selectedStaff[appt.id] || ''}
-                                      onChange={(e) => handleStaffSelectChange(appt.id, e.target.value)}
+                                      value={selectedStaff[appt.id] || ""}
+                                      onChange={
+                                        (e) =>
+                                          handleStaffSelectChange(
+                                            appt.id,
+                                            e.target.value
+                                          ) // Khi người dùng chọn nhân viên
+                                      }
                                       label="Gán nhân viên"
-                                      disabled={assigning}
+                                      disabled={assigning} // Vô hiệu hóa khi đang gán nhân viên
                                     >
                                       <MenuItem value="">
                                         <em>-- Chọn nhân viên --</em>
                                       </MenuItem>
                                       {approvedStaffs.map((staff) => (
-                                        <MenuItem key={staff.id} value={staff.id}>
-                                          <Stack direction="row" alignItems="center" spacing={1}>
-                                            <Avatar sx={{ width: 24, height: 24, bgcolor: 'success.main' }}>
+                                        <MenuItem
+                                          key={staff.id}
+                                          value={staff.id}
+                                        >
+                                          <Stack
+                                            direction="row"
+                                            alignItems="center"
+                                            spacing={1}
+                                          >
+                                            <Avatar
+                                              sx={{
+                                                width: 24,
+                                                height: 24,
+                                                bgcolor: "success.main",
+                                              }}
+                                            >
                                               <Person fontSize="small" />
                                             </Avatar>
-                                            <Typography>{renderName(staff.fullName)}</Typography>
+                                            <Typography>
+                                              {renderName(staff.fullName)}
+                                            </Typography>
                                           </Stack>
                                         </MenuItem>
                                       ))}
                                     </Select>
                                   </FormControl>
-                                  
+
                                   <Button
                                     variant="contained"
                                     startIcon={<PersonAdd />}
-                                    onClick={() => assignStaff(appt.id, selectedStaff[appt.id])}
-                                    disabled={assigning || !selectedStaff[appt.id]}
+                                    onClick={
+                                      () =>
+                                        assignStaff(
+                                          appt.id,
+                                          selectedStaff[appt.id]
+                                        ) // Gán nhân viên khi nhấn nút
+                                    }
+                                    disabled={
+                                      assigning || !selectedStaff[appt.id]
+                                    } // Vô hiệu hóa nút nếu không có nhân viên chọn
                                     sx={{ minWidth: 120, borderRadius: 2 }}
                                   >
                                     Gán
@@ -359,10 +517,12 @@ const WorkShiftDetail = () => {
             {/* Statistics Cards */}
             <Grid container spacing={2}>
               <Grid item xs={6}>
-                <Card sx={{ borderRadius: 2, bgcolor: 'success.50' }}>
-                  <CardContent sx={{ textAlign: 'center', p: 2 }}>
+                <Card sx={{ borderRadius: 2, bgcolor: "success.50" }}>
+                  <CardContent sx={{ textAlign: "center", p: 2 }}>
                     <Badge badgeContent={approvedStaffs.length} color="success">
-                      <CheckCircle sx={{ fontSize: 32, color: 'success.main' }} />
+                      <CheckCircle
+                        sx={{ fontSize: 32, color: "success.main" }}
+                      />
                     </Badge>
                     <Typography variant="h6" sx={{ mt: 1, fontWeight: 600 }}>
                       Đã duyệt
@@ -371,10 +531,10 @@ const WorkShiftDetail = () => {
                 </Card>
               </Grid>
               <Grid item xs={6}>
-                <Card sx={{ borderRadius: 2, bgcolor: 'warning.50' }}>
-                  <CardContent sx={{ textAlign: 'center', p: 2 }}>
+                <Card sx={{ borderRadius: 2, bgcolor: "warning.50" }}>
+                  <CardContent sx={{ textAlign: "center", p: 2 }}>
                     <Badge badgeContent={pendingStaffs.length} color="warning">
-                      <Pending sx={{ fontSize: 32, color: 'warning.main' }} />
+                      <Pending sx={{ fontSize: 32, color: "warning.main" }} />
                     </Badge>
                     <Typography variant="h6" sx={{ mt: 1, fontWeight: 600 }}>
                       Chờ duyệt
@@ -389,7 +549,7 @@ const WorkShiftDetail = () => {
               <CardContent sx={{ p: 0 }}>
                 <Box sx={{ p: 3, pb: 2 }}>
                   <Stack direction="row" alignItems="center" spacing={2}>
-                    <Avatar sx={{ bgcolor: 'secondary.main' }}>
+                    <Avatar sx={{ bgcolor: "secondary.main" }}>
                       <Group />
                     </Avatar>
                     <Box>
@@ -402,12 +562,14 @@ const WorkShiftDetail = () => {
                     </Box>
                   </Stack>
                 </Box>
-                
+
                 <Divider />
 
                 {registeredStaffs.length === 0 ? (
-                  <Box sx={{ p: 4, textAlign: 'center' }}>
-                    <Person sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+                  <Box sx={{ p: 4, textAlign: "center" }}>
+                    <Person
+                      sx={{ fontSize: 48, color: "text.secondary", mb: 2 }}
+                    />
                     <Typography variant="body1" color="text.secondary">
                       Chưa có nhân viên đăng ký
                     </Typography>
@@ -416,45 +578,63 @@ const WorkShiftDetail = () => {
                   <Box sx={{ p: 2 }}>
                     <Stack spacing={2}>
                       {registeredStaffs.map((staff) => (
-                        <Card 
-                          key={staff.id} 
+                        <Card
+                          key={staff.id}
                           variant="outlined"
-                          sx={{ 
+                          sx={{
                             borderRadius: 2,
-                            transition: 'all 0.2s ease-in-out',
-                            '&:hover': { boxShadow: 2 }
+                            transition: "all 0.2s ease-in-out",
+                            "&:hover": { boxShadow: 2 },
                           }}
                         >
                           <CardContent sx={{ p: 2 }}>
-                            <Stack direction="row" alignItems="center" spacing={2}>
-                              <Avatar 
-                                sx={{ 
-                                  bgcolor: staff.isApproved ? 'success.main' : 'warning.main',
+                            <Stack
+                              direction="row"
+                              alignItems="center"
+                              spacing={2}
+                            >
+                              <Avatar
+                                sx={{
+                                  bgcolor: staff.isApproved
+                                    ? "success.main"
+                                    : "warning.main",
                                   width: 40,
-                                  height: 40
+                                  height: 40,
                                 }}
                               >
                                 <Person />
                               </Avatar>
-                              
+
                               <Box sx={{ flex: 1 }}>
-                                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                                <Typography
+                                  variant="subtitle1"
+                                  sx={{ fontWeight: 600 }}
+                                >
                                   {renderName(staff.fullName)}
                                 </Typography>
                                 <Chip
-                                  label={staff.isApproved ? "Đã duyệt" : "Chờ duyệt"}
-                                  color={staff.isApproved ? "success" : "warning"}
+                                  label={
+                                    staff.isApproved ? "Đã duyệt" : "Chờ duyệt"
+                                  }
+                                  color={
+                                    staff.isApproved ? "success" : "warning"
+                                  }
                                   size="small"
                                   sx={{ borderRadius: 2 }}
                                 />
                               </Box>
-                              
+
                               {!staff.isApproved && (
                                 <Button
                                   variant="contained"
                                   size="small"
                                   startIcon={<CheckCircle />}
-                                  onClick={() => handleApproveClick(staff.id, renderName(staff.fullName))}
+                                  onClick={() =>
+                                    handleApproveClick(
+                                      staff.id,
+                                      renderName(staff.fullName)
+                                    )
+                                  }
                                   sx={{ borderRadius: 2, minWidth: 80 }}
                                 >
                                   Duyệt
@@ -476,35 +656,40 @@ const WorkShiftDetail = () => {
       {/* Confirmation Dialog */}
       <Dialog
         open={confirmDialog.open}
-        onClose={() => setConfirmDialog({ open: false, userId: null, userName: '' })}
+        onClose={() =>
+          setConfirmDialog({ open: false, userId: null, userName: "" })
+        }
         PaperProps={{
-          sx: { borderRadius: 3, minWidth: 400 }
+          sx: { borderRadius: 3, minWidth: 400 },
         }}
       >
         <DialogTitle sx={{ pb: 1 }}>
           <Stack direction="row" alignItems="center" spacing={2}>
-            <Avatar sx={{ bgcolor: 'primary.main' }}>
+            <Avatar sx={{ bgcolor: "primary.main" }}>
               <Info />
             </Avatar>
             <Typography variant="h6">Xác nhận duyệt nhân viên</Typography>
           </Stack>
         </DialogTitle>
-        
+
         <DialogContent>
           <Typography>
-            Bạn có chắc chắn muốn duyệt nhân viên <strong>{confirmDialog.userName}</strong> cho ca làm việc này không?
+            Bạn có chắc chắn muốn duyệt nhân viên{" "}
+            <strong>{confirmDialog.userName}</strong> cho ca làm việc này không?
           </Typography>
         </DialogContent>
-        
+
         <DialogActions sx={{ p: 3 }}>
-          <Button 
-            onClick={() => setConfirmDialog({ open: false, userId: null, userName: '' })}
+          <Button
+            onClick={() =>
+              setConfirmDialog({ open: false, userId: null, userName: "" })
+            }
             variant="outlined"
             sx={{ borderRadius: 2 }}
           >
             Hủy
           </Button>
-          <Button 
+          <Button
             onClick={() => approveStaff(confirmDialog.userId)}
             variant="contained"
             startIcon={<CheckCircle />}
@@ -515,7 +700,7 @@ const WorkShiftDetail = () => {
         </DialogActions>
       </Dialog>
 
-      <ToastContainer 
+      <ToastContainer
         position="bottom-right"
         autoClose={3000}
         hideProgressBar={false}

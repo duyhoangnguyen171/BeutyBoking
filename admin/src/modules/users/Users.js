@@ -52,6 +52,9 @@ import UserAdd from "./UserAdd";
 import UserEdit from "./UserEdit";
 
 const Users = () => {
+  useEffect(() => {
+      document.title = "Người dùng";
+    }, []);
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [filterRole, setFilterRole] = useState("all");

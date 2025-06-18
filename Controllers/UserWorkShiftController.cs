@@ -8,7 +8,7 @@ using System.Security.Claims;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize(Roles = "admin,staff")]
+//[Authorize(Roles = "admin,staff")]
 public class UserWorkShiftController : ControllerBase
 {
     private readonly SalonContext _context;
@@ -33,31 +33,54 @@ public class UserWorkShiftController : ControllerBase
         return Ok(userWorkShifts);
     }
 
-    [HttpPost]
-    [Authorize(Roles = "admin")]
-    public async Task<ActionResult<UserWorkShiftDTO>> AssignUserToWorkShift([FromBody] UserWorkShiftDTO dto)
+    [HttpPut("AssignStaff")]
+    public async Task<IActionResult> AssignStaffToAppointment(int appointmentId, int newStaffId)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(new { message = "Invalid input data." });
+        var appointment = await _context.Appointments.FindAsync(appointmentId);
+        if (appointment == null)
+            return NotFound("Appointment not found");
 
-        var user = await _context.Users.FindAsync(dto.UserId);
-        var workShift = await _context.WorkShifts.FindAsync(dto.WorkShiftId);
+        // Kiểm tra nếu nhân viên cũ có lịch đã được gán
+        var oldStaffTimeSlot = await _context.StaffTimeSlots
+            .FirstOrDefaultAsync(sts => sts.StaffId == appointment.StaffId && sts.TimeSlotId == appointment.StaffTimeSlotId);
 
-        if (user == null || workShift == null)
-            return NotFound(new { message = "User or WorkShift not found." });
+        // Kiểm tra nếu nhân viên mới có lịch trùng với thời gian và ca làm hiện tại
+        var newStaffTimeSlot = await _context.StaffTimeSlots
+            .FirstOrDefaultAsync(sts => sts.StaffId == newStaffId && sts.TimeSlotId == appointment.StaffTimeSlotId);
 
-        var userWorkShift = new UserWorkShift
+        if (newStaffTimeSlot != null && newStaffTimeSlot.IsBooked == false)
         {
-            UserId = dto.UserId,
-            WorkShiftId = dto.WorkShiftId,
-            RegisteredAt = DateTime.Now
-        };
+            // Nếu trạng thái IsBooked của nhân viên mới là false, tức là nhân viên mới đã có lịch tại khung giờ này
+            return Conflict("Nhân viên mới đã có lịch tại khung giờ này.");
+        }
 
-        _context.UserWorkShifts.Add(userWorkShift);
-        await _context.SaveChangesAsync();
+        // Thực hiện gán lại nhân viên cho lịch hẹn
+        appointment.StaffId = newStaffId;
+        appointment.UpdatedAt = DateTime.UtcNow; // Cập nhật thời gian
+        await _context.SaveChangesAsync(); // Lưu lại thay đổi cho lịch hẹn
 
-        return CreatedAtAction(nameof(GetWorkShiftsByUserId), new { userId = dto.UserId }, dto);
+        // Sau khi gán thành công, cập nhật trạng thái IsBooked cho nhân viên cũ
+        if (oldStaffTimeSlot != null && oldStaffTimeSlot.IsBooked == false)
+        {
+            oldStaffTimeSlot.IsBooked = true;  // Đánh dấu là khung giờ có thể gán lại lịch
+            _context.StaffTimeSlots.Update(oldStaffTimeSlot);
+        }
+
+        // Cập nhật trạng thái IsBooked của nhân viên mới thành false (đánh dấu đã có lịch)
+        if (newStaffTimeSlot != null)
+        {
+            newStaffTimeSlot.IsBooked = false; // Đánh dấu là đã có lịch
+            _context.StaffTimeSlots.Update(newStaffTimeSlot);
+        }
+
+        await _context.SaveChangesAsync(); // Lưu lại tất cả thay đổi
+
+        return Ok("Gán nhân viên thành công");
     }
+
+
+
+
 
     [HttpDelete("{userId}/{workShiftId}")]
     [Authorize(Roles = "admin")]
@@ -76,7 +99,7 @@ public class UserWorkShiftController : ControllerBase
     }
 
     [HttpPut("Approve")]
-    [Authorize(Roles = "admin")]
+    //[Authorize(Roles = "admin")]
     public async Task<IActionResult> ApproveUserWorkShift([FromQuery] int userId, [FromQuery] int workShiftId)
     {
         var userWorkShift = await _context.UserWorkShifts
@@ -174,4 +197,5 @@ public class UserWorkShiftController : ControllerBase
 
         return Ok(unregistered);
     }
+
 }

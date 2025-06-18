@@ -1,4 +1,4 @@
-import { UploadFile } from "@mui/icons-material";
+import { UploadFile, Person, Email, Lock, Phone, AdminPanelSettings, Close } from "@mui/icons-material";
 import {
   Button,
   MenuItem,
@@ -7,12 +7,18 @@ import {
   Modal,
   CircularProgress,
   TextField,
+  Avatar,
+  Divider,
+  IconButton,
+  Paper,
+  Fade,
+  Grid,
 } from "@mui/material";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useState, useRef } from "react";
 import { addUser } from "../../services/UserService";
-import { uploadFile } from "../../utils/uploadfile"; // Hàm upload file
+import { uploadFile } from "../../utils/uploadfile";
 
 const UserAdd = ({ open, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
@@ -21,17 +27,21 @@ const UserAdd = ({ open, onClose, onSuccess }) => {
     password: "",
     phone: "",
     role: "",
-    imageurl: "", // Thêm trường imageurl
+    imageurl: "",
   });
 
   const [loading, setLoading] = useState(false);
-  const [file, setFile] = useState(null); // Trường lưu file ảnh
+  const [file, setFile] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [errors, setErrors] = useState({});
 
-  const inpRef = useRef(); // Dùng để mở input file
+  const inpRef = useRef();
 
-  const roles = ["Admin", "Staff", "Customer"];
+  const roles = [
+    { value: "Admin", label: "Quản trị viên", color: "#e74c3c" },
+    { value: "Staff", label: "Nhân viên", color: "#3498db" },
+    { value: "Customer", label: "Khách hàng", color: "#27ae60" }
+  ];
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -41,15 +51,15 @@ const UserAdd = ({ open, onClose, onSuccess }) => {
     }));
     setErrors((prevErrors) => ({
       ...prevErrors,
-      [name]: "", // Clear error of this field
+      [name]: "",
     }));
-    setErrorMessage(""); // Clear general error
+    setErrorMessage("");
   };
 
   const handleImageChange = (e) => {
     const selectedFile = e.target.files[0];
     if (selectedFile) {
-      setFile(selectedFile); // Lưu file để gửi lên backend
+      setFile(selectedFile);
     }
   };
 
@@ -84,7 +94,6 @@ const UserAdd = ({ open, onClose, onSuccess }) => {
     try {
       let imageUrl = "";
       if (file) {
-        // Nếu có ảnh, tải ảnh lên và lấy URL
         imageUrl = await uploadFile(file, "user-images");
         if (!imageUrl || imageUrl === "Error upload") {
           throw new Error("Lỗi tải ảnh lên.");
@@ -93,26 +102,25 @@ const UserAdd = ({ open, onClose, onSuccess }) => {
 
       const userData = {
         ...formData,
-        imageurl: imageUrl, // Đính kèm URL ảnh
+        imageurl: imageUrl,
       };
 
-      await addUser(userData); // Gửi dữ liệu lên backend
+      await addUser(userData);
       toast.success("Thêm người dùng thành công!", {
         position: "top-right",
         autoClose: 3000,
       });
       onSuccess();
 
-      // Reset form sau khi thêm người dùng
       setFormData({
         fullName: "",
         email: "",
         password: "",
         phone: "",
         role: "",
-        imageurl: "", // Reset ảnh
+        imageurl: "",
       });
-      setFile(null); // Reset file
+      setFile(null);
       setErrors({});
       setErrorMessage("");
       onClose();
@@ -128,147 +136,355 @@ const UserAdd = ({ open, onClose, onSuccess }) => {
     }
   };
 
+  const handleClose = () => {
+    if (!loading) {
+      setFormData({
+        fullName: "",
+        email: "",
+        password: "",
+        phone: "",
+        role: "",
+        imageurl: "",
+      });
+      setFile(null);
+      setErrors({});
+      setErrorMessage("");
+      onClose();
+    }
+  };
+
   return (
     <>
-      <Modal open={open} onClose={onClose}>
-        <Box
-          sx={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            width: 400,
-            bgcolor: "background.paper",
-            boxShadow: 24,
-            p: 4,
-            borderRadius: 2,
-          }}
-        >
-          <Typography variant="h6" component="h2" gutterBottom>
-            Thêm người dùng
-          </Typography>
-          {errorMessage && (
-            <Typography color="error" variant="body2" sx={{ mb: 2 }}>
-              {errorMessage}
-            </Typography>
-          )}
-          <form onSubmit={handleSubmit}>
-            <TextField
-              label="Họ tên"
-              name="fullName"
-              value={formData.fullName}
-              onChange={handleChange}
-              fullWidth
-              margin="normal"
-              required
-              disabled={loading}
-              error={!!errors.fullName}
-              helperText={errors.fullName}
-            />
-            <TextField
-              label="Email"
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleChange}
-              fullWidth
-              margin="normal"
-              required
-              disabled={loading}
-              error={!!errors.email}
-              helperText={errors.email}
-            />
-            <TextField
-              label="Mật khẩu"
-              name="password"
-              type="password"
-              value={formData.password}
-              onChange={handleChange}
-              fullWidth
-              margin="normal"
-              required
-              disabled={loading}
-              error={!!errors.password}
-              helperText={errors.password}
-            />
-            <TextField
-              label="Số điện thoại"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              fullWidth
-              margin="normal"
-              disabled={loading}
-              error={!!errors.phone}
-              helperText={errors.phone}
-            />
-            <TextField
-              select
-              label="Vai trò"
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-              fullWidth
-              margin="normal"
-              required
-              disabled={loading}
-              error={!!errors.role}
-              helperText={errors.role}
+      <Modal 
+        open={open} 
+        onClose={handleClose}
+        closeAfterTransition
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Fade in={open}>
+          <Paper
+            elevation={24}
+            sx={{
+              width: { xs: '90vw', sm: 500 },
+              maxHeight: '90vh',
+              overflow: 'auto',
+              borderRadius: 3,
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              position: 'relative',
+            }}
+          >
+            {/* Header */}
+            <Box
+              sx={{
+                p: 3,
+                pb: 2,
+                background: 'rgba(255, 255, 255, 0.95)',
+                backdropFilter: 'blur(10px)',
+                borderRadius: '12px 12px 0 0',
+                position: 'relative',
+              }}
             >
-              {roles.map((role) => (
-                <MenuItem key={role} value={role}>
-                  {role}
-                </MenuItem>
-              ))}
-            </TextField>
-
-            <label>
-              <Button
-                size="small"
-                variant="outlined"
-                color="secondary"
-                component="span"
-                startIcon={<UploadFile />}
-                onClick={() => inpRef.current.click()}
-              >
-                Thêm ảnh
-              </Button>
-              <input
-                type="file"
-                ref={inpRef}
-                onChange={handleImageChange}
-                hidden
-                accept="image/*"
-              />
-            </label>
-            {file && (
-              <img
-                src={URL.createObjectURL(file)}
-                alt="Preview"
-                style={{ maxWidth: "100%", maxHeight: "200px" }}
-              />
-            )}
-
-            <Box display="flex" justifyContent="flex-end" mt={2}>
-              <Button
-                onClick={onClose}
-                color="secondary"
-                style={{ marginRight: 8 }}
+              <IconButton
+                onClick={handleClose}
                 disabled={loading}
+                sx={{
+                  position: 'absolute',
+                  right: 8,
+                  top: 8,
+                  bgcolor: 'rgba(0,0,0,0.05)',
+                  '&:hover': { bgcolor: 'rgba(0,0,0,0.1)' }
+                }}
               >
-                Hủy
-              </Button>
-              <Button
-                type="submit"
-                variant="contained"
-                color="primary"
-                disabled={loading}
-              >
-                {loading ? <CircularProgress size={24} /> : "Thêm"}
-              </Button>
+                <Close />
+              </IconButton>
+              
+              <Box display="flex" alignItems="center" gap={2}>
+                <Avatar
+                  sx={{
+                    bgcolor: 'primary.main',
+                    width: 48,
+                    height: 48,
+                  }}
+                >
+                  <Person />
+                </Avatar>
+                <Box>
+                  <Typography variant="h5" fontWeight="bold" color="primary.main">
+                    Thêm người dùng mới
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Điền thông tin để tạo tài khoản mới
+                  </Typography>
+                </Box>
+              </Box>
             </Box>
-          </form>
-        </Box>
+
+            <Box sx={{ p: 3, bgcolor: 'background.paper' }}>
+              {errorMessage && (
+                <Box
+                  sx={{
+                    p: 2,
+                    mb: 3,
+                    bgcolor: 'error.light',
+                    color: 'error.contrastText',
+                    borderRadius: 2,
+                    border: '1px solid',
+                    borderColor: 'error.main',
+                  }}
+                >
+                  <Typography variant="body2">{errorMessage}</Typography>
+                </Box>
+              )}
+
+              <form onSubmit={handleSubmit}>
+                {/* Avatar Upload Section */}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    mb: 3,
+                    p: 3,
+                    bgcolor: 'grey.50',
+                    borderRadius: 2,
+                    border: '2px dashed',
+                    borderColor: file ? 'primary.main' : 'grey.300',
+                    transition: 'all 0.3s ease',
+                  }}
+                >
+                  <Avatar
+                    sx={{
+                      width: 100,
+                      height: 100,
+                      mb: 2,
+                      border: '4px solid',
+                      borderColor: 'primary.main',
+                      cursor: 'pointer',
+                    }}
+                    src={file ? URL.createObjectURL(file) : undefined}
+                    onClick={() => inpRef.current?.click()}
+                  >
+                    {!file && <Person sx={{ fontSize: 40 }} />}
+                  </Avatar>
+                  
+                  <Button
+                    variant="outlined"
+                    startIcon={<UploadFile />}
+                    onClick={() => inpRef.current?.click()}
+                    disabled={loading}
+                    sx={{
+                      borderRadius: 20,
+                      textTransform: 'none',
+                      fontWeight: 600,
+                    }}
+                  >
+                    {file ? 'Thay đổi ảnh' : 'Tải lên ảnh'}
+                  </Button>
+                  
+                  <input
+                    type="file"
+                    ref={inpRef}
+                    onChange={handleImageChange}
+                    hidden
+                    accept="image/*"
+                  />
+                  
+                  {file && (
+                    <Typography variant="caption" color="success.main" sx={{ mt: 1 }}>
+                      ✓ Đã chọn: {file.name}
+                    </Typography>
+                  )}
+                </Box>
+
+                <Grid container spacing={2}>
+                  <Grid item xs={12}>
+                    <TextField
+                      label="Họ và tên"
+                      name="fullName"
+                      value={formData.fullName}
+                      onChange={handleChange}
+                      fullWidth
+                      required
+                      disabled={loading}
+                      error={!!errors.fullName}
+                      helperText={errors.fullName}
+                      InputProps={{
+                        startAdornment: (
+                          <Person sx={{ color: 'text.secondary', mr: 1 }} />
+                        ),
+                      }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: 2,
+                        }
+                      }}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12}>
+                    <TextField
+                      label="Địa chỉ email"
+                      name="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      fullWidth
+                      required
+                      disabled={loading}
+                      error={!!errors.email}
+                      helperText={errors.email}
+                      InputProps={{
+                        startAdornment: (
+                          <Email sx={{ color: 'text.secondary', mr: 1 }} />
+                        ),
+                      }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: 2,
+                        }
+                      }}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12}>
+                    <TextField
+                      label="Mật khẩu"
+                      name="password"
+                      type="password"
+                      value={formData.password}
+                      onChange={handleChange}
+                      fullWidth
+                      required
+                      disabled={loading}
+                      error={!!errors.password}
+                      helperText={errors.password}
+                      InputProps={{
+                        startAdornment: (
+                          <Lock sx={{ color: 'text.secondary', mr: 1 }} />
+                        ),
+                      }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: 2,
+                        }
+                      }}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12}>
+                    <TextField
+                      label="Số điện thoại"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      fullWidth
+                      disabled={loading}
+                      error={!!errors.phone}
+                      helperText={errors.phone}
+                      InputProps={{
+                        startAdornment: (
+                          <Phone sx={{ color: 'text.secondary', mr: 1 }} />
+                        ),
+                      }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: 2,
+                        }
+                      }}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12}>
+                    <TextField
+                      select
+                      label="Vai trò"
+                      name="role"
+                      value={formData.role}
+                      onChange={handleChange}
+                      fullWidth
+                      required
+                      disabled={loading}
+                      error={!!errors.role}
+                      helperText={errors.role}
+                      InputProps={{
+                        startAdornment: (
+                          <AdminPanelSettings sx={{ color: 'text.secondary', mr: 1 }} />
+                        ),
+                      }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: 2,
+                        }
+                      }}
+                    >
+                      {roles.map((role) => (
+                        <MenuItem key={role.value} value={role.value}>
+                          <Box display="flex" alignItems="center" gap={1}>
+                            <Box
+                              sx={{
+                                width: 12,
+                                height: 12,
+                                borderRadius: '50%',
+                                bgcolor: role.color,
+                              }}
+                            />
+                            {role.label}
+                          </Box>
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  </Grid>
+                </Grid>
+
+                <Divider sx={{ my: 3 }} />
+
+                <Box display="flex" gap={2} justifyContent="flex-end">
+                  <Button
+                    onClick={handleClose}
+                    variant="outlined"
+                    disabled={loading}
+                    sx={{
+                      borderRadius: 20,
+                      textTransform: 'none',
+                      fontWeight: 600,
+                      px: 3,
+                    }}
+                  >
+                    Hủy bỏ
+                  </Button>
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    disabled={loading}
+                    sx={{
+                      borderRadius: 20,
+                      textTransform: 'none',
+                      fontWeight: 600,
+                      px: 4,
+                      background: 'linear-gradient(45deg, #667eea 30%, #764ba2 90%)',
+                      '&:hover': {
+                        background: 'linear-gradient(45deg, #5a6fd8 30%, #6a4190 90%)',
+                      }
+                    }}
+                  >
+                    {loading ? (
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <CircularProgress size={20} color="inherit" />
+                        Đang xử lý...
+                      </Box>
+                    ) : (
+                      'Tạo tài khoản'
+                    )}
+                  </Button>
+                </Box>
+              </form>
+            </Box>
+          </Paper>
+        </Fade>
       </Modal>
       <ToastContainer />
     </>
