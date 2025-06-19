@@ -32,6 +32,8 @@ import BannerAdd from "./modules/banners/BannerAdd";
 import BannerEdit from "./modules/banners/BannerEdit";
 
 
+import Staffs from "./modules/users/Staff";
+
 import UserAdd from "./modules/users/UserAdd";
 import UserAppointmentHistory from "./modules/users/UserAppointmentHistory";
 import UserEdit from "./modules/users/UserEdit";
@@ -61,9 +63,10 @@ const App = () => {
           {/* Admin routes */}
           <Route element={<PrivateRoute allowedRole="admin" />}>
             <Route path="/admin" element={<AdminPanel />}>
+
             <Route path="dashboards" element={<Dashboard />} />
              <Route path="appointmentscharts" element={<AppointmentsChart />} />
-
+             <Route path="staffs" element={<Staffs />} />
               <Route path="users" element={<Users />} />
               <Route path="appointments" element={<Appointment />} />
               <Route path="services" element={<Service />} />

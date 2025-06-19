@@ -63,27 +63,29 @@ const Services = () => {
   const inpRef = useRef();
 
   const loadServices = async () => {
-    setLoading(true);
-    try {
-      const response = await ServiceService.getAll();
-      const data = response.data;
-      if (data && Array.isArray(data.$values)) {
-        setServices(data.$values);
-        setFilteredServices(data.$values);
-        console.log("Danh sách dịch vụ:", data.$values);
-      } else {
-        setServices([]);
-        setFilteredServices([]);
-      }
-    } catch (error) {
-      console.error("Lỗi khi tải dịch vụ:", error);
+  setLoading(true);
+  try {
+    const response = await ServiceService.getAll();
+    const data = response.data;
+    if (data && Array.isArray(data.$values)) {
+      // Sort services by ID in descending order
+      const sortedServices = data.$values.sort((a, b) => b.id - a.id);
+      setServices(sortedServices);
+      setFilteredServices(sortedServices);
+      console.log("Danh sách dịch vụ:", sortedServices);
+    } else {
       setServices([]);
       setFilteredServices([]);
-      toast.error("Không thể tải danh sách dịch vụ");
-    } finally {
-      setLoading(false);
     }
-  };
+  } catch (error) {
+    console.error("Lỗi khi tải dịch vụ:", error);
+    setServices([]);
+    setFilteredServices([]);
+    toast.error("Không thể tải danh sách dịch vụ");
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     const fetchCategories = async () => {

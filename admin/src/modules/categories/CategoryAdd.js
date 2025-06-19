@@ -1,42 +1,44 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Button, TextField, Box, Typography } from '@mui/material';
+import { Box, Button, TextField, Typography } from "@mui/material";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import CategoriesService from "../../services/CategoriesService";
 import { uploadFile } from "../../utils/uploadfile";
 
-const CategoryAdd = ({ 
-  open, 
-  onClose, 
-  onCategoryAdded, 
-  category = null, 
-  isEdit = false 
+const CategoryAdd = ({
+  open,
+  onClose,
+  onCategoryAdded,
+  category = null,
+  isEdit = false,
 }) => {
-  const [formData, setFormData] = useState({ 
-    name: '', 
-    services: '', 
-    imageurl: '' 
+  const [formData, setFormData] = useState({
+    name: "",
+    imgarurl: "", // Changed from 'imgarurl' to 'imageUrl'
+    services: [], // Assuming services is an array
   });
   const [file, setFile] = useState(null);
   const inpRef = useRef();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Cập nhật form khi category thay đổi (cho trường hợp edit)
+  // Update form when category changes (for edit case)
   useEffect(() => {
     if (category && isEdit) {
       setFormData({
-        name: category.name || '',
-        services: category.services || '',
-        imageurl: category.imageurl || ''
+        name: category.name || "",
+        imgarurl: category.imgarurl || "", // Ensure this matches your API field
+        services: category.services || [], // Default to empty array
       });
     } else {
-      // Reset form khi mở modal thêm mới
+      // Reset form when opening modal for adding new category
       setFormData({
-        name: '',
-        services: '',
-        imageurl: ''
+        name: "",
+        imgarurl: "",
+        services: [], // Default empty array
       });
     }
-    setError(null); // Reset error khi modal mở
+    setError(null); // Reset error when modal opens
   }, [category, isEdit, open]);
 
   const handleChange = (e) => {
@@ -53,7 +55,7 @@ const CategoryAdd = ({
 
   const handleSave = async () => {
     if (!formData.name.trim()) {
-      setError('Tên category không được để trống.');
+      setError("Tên category không được để trống.");
       return;
     }
 
@@ -62,35 +64,59 @@ const CategoryAdd = ({
 
     try {
       let result;
-      // Upload ảnh nếu có file được chọn
-      let imageurl = formData.imageurl;
+      let imgarurl = formData.imgarurl;
+
+      // Log the form data before making the request
+      console.log("Data being submitted:", { ...formData, imgarurl });
+
+      // Upload image if file is selected
       if (file) {
         const uploadedUrl = await uploadFile(file, "images");
         if (typeof uploadedUrl !== "string" || uploadedUrl === "Error upload") {
           throw new Error("Tải ảnh lên thất bại.");
         }
-        imageurl = uploadedUrl;
+        imgarurl = uploadedUrl;
       }
 
-      // Cập nhật hoặc thêm mới category
-      const dataToSubmit = { ...formData, imageurl };
+      // Prepare data for submission
+      const dataToSubmit = { ...formData, imgarurl };
+
+      // Log the data that will be sent to the server
+      console.log("Data after processing (including image URL):", dataToSubmit);
+
+      // Create or update category based on isEdit flag
       if (isEdit && category) {
         result = await CategoriesService.update(category.id, dataToSubmit);
       } else {
         result = await CategoriesService.create(dataToSubmit);
       }
 
-      onCategoryAdded(result); // Gọi callback với dữ liệu trả về
+      if (result) {
+        onCategoryAdded(result); // Callback with the returned category data
+        toast.success(
+          isEdit ? "Cập nhật category thành công!" : "Thêm category thành công!"
+        );
+        onClose(); // Close the modal
+      } else {
+        throw new Error("Service returned null or failed");
+      }
     } catch (err) {
-      setError(isEdit ? 'Có lỗi xảy ra khi cập nhật category.' : 'Có lỗi xảy ra khi thêm category.');
+      setError(
+        isEdit
+          ? "Có lỗi xảy ra khi cập nhật category."
+          : "Có lỗi xảy ra khi thêm category."
+      );
       console.error(err);
+      toast.error(
+        isEdit ? "Lỗi khi cập nhật category." : "Lỗi khi thêm category."
+      );
     } finally {
       setLoading(false);
     }
   };
 
   const handleCancel = () => {
-    setFormData({ name: '', services: '', imageurl: '' });
+    setFormData({ name: "", imgarurl: "", services: [] }); // Reset services to empty array
     setError(null);
     onClose();
   };
@@ -98,15 +124,15 @@ const CategoryAdd = ({
   return (
     <Box>
       <Typography variant="h6" gutterBottom>
-        {isEdit ? 'Sửa Category' : 'Thêm Category'}
+        {isEdit ? "Sửa Category" : "Thêm Category"}
       </Typography>
-      
+
       {error && (
         <Typography color="error" sx={{ mb: 2 }}>
           {error}
         </Typography>
       )}
-      
+
       <TextField
         label="Tên Category"
         variant="outlined"
@@ -118,8 +144,7 @@ const CategoryAdd = ({
         required
       />
 
-      
-      {/* Thêm phần tải lên hình ảnh */}
+      {/* Image upload */}
       <input
         type="file"
         accept="image/*"
@@ -127,7 +152,7 @@ const CategoryAdd = ({
         ref={inpRef}
         style={{ marginTop: 10 }}
       />
-      
+
       {file && (
         <div style={{ marginTop: "10px" }}>
           <img
@@ -145,10 +170,10 @@ const CategoryAdd = ({
         </div>
       )}
 
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3 }}>
-        <Button 
-          variant="outlined" 
-          color="secondary" 
+      <Box sx={{ display: "flex", justifyContent: "space-between", mt: 3 }}>
+        <Button
+          variant="outlined"
+          color="secondary"
           onClick={handleCancel}
           disabled={loading}
         >
@@ -160,10 +185,13 @@ const CategoryAdd = ({
           onClick={handleSave}
           disabled={loading || !formData.name.trim()}
         >
-          {loading 
-            ? (isEdit ? 'Đang cập nhật...' : 'Đang thêm...') 
-            : (isEdit ? 'Cập nhật' : 'Thêm')
-          }
+          {loading
+            ? isEdit
+              ? "Đang cập nhật..."
+              : "Đang thêm..."
+            : isEdit
+            ? "Cập nhật"
+            : "Thêm"}
         </Button>
       </Box>
     </Box>

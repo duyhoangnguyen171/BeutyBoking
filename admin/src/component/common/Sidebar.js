@@ -110,6 +110,12 @@ const getMenuItems = (role) => {
       icon: Users, 
       path: "/users" 
     },
+     { 
+      key: "staffs", 
+      label: "Nhân viên", 
+      icon: Users, 
+      path: "/staffs" 
+    },
     { 
       key: "contact", 
       label: "Liên hệ", 
@@ -135,6 +141,7 @@ const getMenuItems = (role) => {
       path: "/news" 
     }
   ];
+  
 
   return role === "admin" 
     ? [...commonItems, ...adminOnlyItems]

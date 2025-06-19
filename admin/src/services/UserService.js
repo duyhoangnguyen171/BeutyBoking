@@ -140,3 +140,50 @@ export const getTopReturningCustomers = () => {
     .get(`${API_URL}/top-returning-customers`, authHeader())
     .then(res => res.data);
 };
+export const getAllStaff = () => {
+  return axios
+    .get(`${API_URL}/All/staff`, { headers: authHeader() })  // Đảm bảo là gọi đúng API của bạn
+    .then((res) => res.data.$values)  // Trả về dữ liệu từ response (danh sách nhân viên)
+    .catch((error) => {
+      console.error("Error fetching staff list", error);
+      throw error; // Lỗi có thể được xử lý ở nơi gọi service này
+    });
+};
+
+export const addStaff = async (staffData) => {
+  try {
+    const response = await axios.post(`${API_URL}/Post-staff`, staffData, {
+      headers: {
+        "Content-Type": "application/json",  // Đảm bảo là gửi đúng content type
+        ...authHeader(),  // Nếu bạn có header xác thực, sử dụng authHeader() để thêm token
+      },
+    });
+    // Trả về kết quả từ API (ví dụ: thông báo thành công hoặc dữ liệu trả về)
+    return response.data;
+  } catch (error) {
+    // Xử lý lỗi khi không thể gọi API
+    console.error("Error adding staff:", error);
+    throw error;  // Ném lỗi để xử lý ở component
+  }
+};
+export const updateStaff = async (userId, staffData) => {
+  try {
+    const response = await axios.put(
+      `${API_URL}/staff/${userId}`,
+      staffData,
+      {
+        headers: {
+          ...authHeader(),
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error updating staff:", error);
+    throw error;
+  }
+};
+export const deleteStaff = (id) => {
+  return axios.delete(`${API_URL}/staff/${id}`, authHeader()).then(res => res.data);
+};

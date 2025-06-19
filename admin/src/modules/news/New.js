@@ -43,7 +43,7 @@ const News = () => {
   useEffect(() => {
     document.title = "Tin tức";
   }, []);
-  
+
   const [news, setNews] = useState([]);
   const [filteredNews, setFilteredNews] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -56,31 +56,31 @@ const News = () => {
   const rowsPerPage = 3;
 
   const loadNews = async () => {
-    try {
-      const response = await NewService.getAll();
-      const data = response.data;
-      if (data && Array.isArray(data.$values)) {
-        setNews(data.$values);
-        setFilteredNews(data.$values);
-      } else {
-        setNews([]);
-        setFilteredNews([]);
-      }
-    } catch (error) {
-      console.error("Lỗi khi tải tin tức:", error);
+  try {
+    const response = await NewService.getAll();
+    const data = response.data;
+    if (data && Array.isArray(data.$values)) {
+      const sortedNews = data.$values.sort((a, b) => b.id - a.id); // Sort by ID in descending order
+      setNews(sortedNews);
+      setFilteredNews(sortedNews);
+    } else {
       setNews([]);
       setFilteredNews([]);
-      toast.error("Có lỗi khi tải tin tức. Vui lòng thử lại!", {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
     }
-  };
-
+  } catch (error) {
+    console.error("Lỗi khi tải tin tức:", error);
+    setNews([]);
+    setFilteredNews([]);
+    toast.error("Có lỗi khi tải tin tức. Vui lòng thử lại!", {
+      position: "top-right",
+      autoClose: 3000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+    });
+  }
+};
   useEffect(() => {
     loadNews();
   }, []);
@@ -151,7 +151,7 @@ const News = () => {
     page * rowsPerPage
   );
   const totalPages = Math.ceil(filteredNews.length / rowsPerPage);
-  
+
   const stripHtml = (html) => {
     const tmp = document.createElement("div");
     tmp.innerHTML = html;
@@ -159,20 +159,20 @@ const News = () => {
   };
 
   return (
-    <Box sx={{ p: 3, backgroundColor: '#f8fafc', minHeight: '100vh' }}>
+    <Box sx={{ p: 3, backgroundColor: "#f8fafc", minHeight: "100vh" }}>
       {/* Header Section */}
       <Box sx={{ mb: 4 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <ArticleIcon sx={{ fontSize: 32, color: 'primary.main', mr: 2 }} />
-          <Typography 
-            variant="h4" 
-            component="h1" 
-            sx={{ 
+        <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+          <ArticleIcon sx={{ fontSize: 32, color: "primary.main", mr: 2 }} />
+          <Typography
+            variant="h4"
+            component="h1"
+            sx={{
               fontWeight: 700,
-              background: 'linear-gradient(45deg, #1976d2, #42a5f5)',
-              backgroundClip: 'text',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
+              background: "linear-gradient(45deg, #1976d2, #42a5f5)",
+              backgroundClip: "text",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
             }}
           >
             Quản lý Tin tức
@@ -184,50 +184,50 @@ const News = () => {
       </Box>
 
       {/* Action Bar */}
-      <Card sx={{ mb: 3, boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }}>
+      <Card sx={{ mb: 3, boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>
         <CardContent>
-          <Stack 
-            direction={{ xs: 'column', sm: 'row' }} 
-            spacing={2} 
-            alignItems={{ xs: 'stretch', sm: 'center' }}
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={2}
+            alignItems={{ xs: "stretch", sm: "center" }}
             justifyContent="space-between"
           >
-            <Button 
-              variant="contained" 
+            <Button
+              variant="contained"
               startIcon={<AddIcon />}
               onClick={handleAdd}
               sx={{
                 px: 3,
                 py: 1.5,
                 borderRadius: 2,
-                background: 'linear-gradient(45deg, #1976d2, #42a5f5)',
-                boxShadow: '0 4px 20px rgba(25, 118, 210, 0.3)',
-                '&:hover': {
-                  background: 'linear-gradient(45deg, #1565c0, #1976d2)',
-                  transform: 'translateY(-2px)',
-                  transition: 'all 0.3s ease',
-                }
+                background: "linear-gradient(45deg, #1976d2, #42a5f5)",
+                boxShadow: "0 4px 20px rgba(25, 118, 210, 0.3)",
+                "&:hover": {
+                  background: "linear-gradient(45deg, #1565c0, #1976d2)",
+                  transform: "translateY(-2px)",
+                  transition: "all 0.3s ease",
+                },
               }}
             >
               Thêm tin tức mới
             </Button>
-            
+
             <TextField
               placeholder="Tìm kiếm theo tiêu đề tin tức..."
               variant="outlined"
               value={searchTerm}
               onChange={handleSearchChange}
-              sx={{ 
-                minWidth: { xs: '100%', sm: 350 },
-                '& .MuiOutlinedInput-root': {
+              sx={{
+                minWidth: { xs: "100%", sm: 350 },
+                "& .MuiOutlinedInput-root": {
                   borderRadius: 2,
-                  backgroundColor: 'white',
-                  '&:hover': {
-                    '& .MuiOutlinedInput-notchedOutline': {
-                      borderColor: 'primary.main',
-                    }
-                  }
-                }
+                  backgroundColor: "white",
+                  "&:hover": {
+                    "& .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "primary.main",
+                    },
+                  },
+                },
               }}
               InputProps={{
                 startAdornment: (
@@ -243,7 +243,13 @@ const News = () => {
       </Card>
 
       {/* Stats Card */}
-      <Card sx={{ mb: 3, background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
+      <Card
+        sx={{
+          mb: 3,
+          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          color: "white",
+        }}
+      >
         <CardContent>
           <Stack direction="row" spacing={4} alignItems="center">
             <Box>
@@ -276,39 +282,54 @@ const News = () => {
       />
 
       {/* Table Card */}
-      <Card sx={{ boxShadow: '0 4px 24px rgba(0,0,0,0.12)', borderRadius: 3 }}>
+      <Card sx={{ boxShadow: "0 4px 24px rgba(0,0,0,0.12)", borderRadius: 3 }}>
         <TableContainer>
           <Table>
             <TableHead>
-              <TableRow sx={{ backgroundColor: '#f8fafc' }}>
-                <TableCell sx={{ fontWeight: 600, color: 'text.primary' }}>ID</TableCell>
-                <TableCell sx={{ fontWeight: 600, color: 'text.primary' }}>Hình ảnh</TableCell>
-                <TableCell sx={{ fontWeight: 600, color: 'text.primary' }}>Tiêu đề</TableCell>
-                <TableCell sx={{ fontWeight: 600, color: 'text.primary' }}>Nội dung</TableCell>
-                <TableCell sx={{ fontWeight: 600, color: 'text.primary' }}>Ngày tạo</TableCell>
-                <TableCell sx={{ fontWeight: 600, color: 'text.primary' }} align="center">Hành động</TableCell>
+              <TableRow sx={{ backgroundColor: "#f8fafc" }}>
+                <TableCell sx={{ fontWeight: 600, color: "text.primary" }}>
+                  ID
+                </TableCell>
+                <TableCell sx={{ fontWeight: 600, color: "text.primary" }}>
+                  Hình ảnh
+                </TableCell>
+                <TableCell sx={{ fontWeight: 600, color: "text.primary" }}>
+                  Tiêu đề
+                </TableCell>
+                <TableCell sx={{ fontWeight: 600, color: "text.primary" }}>
+                  Nội dung
+                </TableCell>
+                <TableCell sx={{ fontWeight: 600, color: "text.primary" }}>
+                  Ngày tạo
+                </TableCell>
+                <TableCell
+                  sx={{ fontWeight: 600, color: "text.primary" }}
+                  align="center"
+                >
+                  Hành động
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {paginatedNews.length > 0 ? (
                 paginatedNews.map((newsItem, index) => (
-                  <TableRow 
+                  <TableRow
                     key={newsItem.id}
-                    sx={{ 
-                      '&:hover': { 
-                        backgroundColor: '#f8fafc',
-                        transition: 'background-color 0.2s ease'
+                    sx={{
+                      "&:hover": {
+                        backgroundColor: "#f8fafc",
+                        transition: "background-color 0.2s ease",
                       },
-                      '&:nth-of-type(even)': {
-                        backgroundColor: '#fafbfc'
-                      }
+                      "&:nth-of-type(even)": {
+                        backgroundColor: "#fafbfc",
+                      },
                     }}
                   >
                     <TableCell>
-                      <Chip 
-                        label={newsItem.id} 
-                        size="small" 
-                        color="primary" 
+                      <Chip
+                        label={newsItem.id}
+                        size="small"
+                        color="primary"
                         variant="outlined"
                       />
                     </TableCell>
@@ -321,9 +342,9 @@ const News = () => {
                           sx={{
                             width: 70,
                             height: 70,
-                            border: '3px solid',
-                            borderColor: 'primary.light',
-                            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                            border: "3px solid",
+                            borderColor: "primary.light",
+                            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
                           }}
                         />
                       ) : (
@@ -332,8 +353,8 @@ const News = () => {
                           sx={{
                             width: 70,
                             height: 70,
-                            backgroundColor: 'grey.200',
-                            color: 'grey.500'
+                            backgroundColor: "grey.200",
+                            color: "grey.500",
                           }}
                         >
                           <ArticleIcon />
@@ -341,36 +362,49 @@ const News = () => {
                       )}
                     </TableCell>
                     <TableCell>
-                      <Typography variant="subtitle2" fontWeight="600" color="text.primary">
+                      <Typography
+                        variant="subtitle2"
+                        fontWeight="600"
+                        color="text.primary"
+                      >
                         {newsItem.title}
                       </Typography>
                     </TableCell>
                     <TableCell sx={{ maxWidth: 300 }}>
                       <Typography variant="body2" color="text.secondary">
                         {stripHtml(newsItem.content).length > 100
-                          ? `${stripHtml(newsItem.content).substring(0, 100)}...`
+                          ? `${stripHtml(newsItem.content).substring(
+                              0,
+                              100
+                            )}...`
                           : stripHtml(newsItem.content)}
                       </Typography>
                     </TableCell>
                     <TableCell>
                       <Chip
-                        label={new Date(newsItem.createdAt).toLocaleDateString('vi-VN')}
+                        label={new Date(newsItem.createdAt).toLocaleDateString(
+                          "vi-VN"
+                        )}
                         size="small"
                         variant="outlined"
                         color="default"
                       />
                     </TableCell>
                     <TableCell align="center">
-                      <Stack direction="row" spacing={1} justifyContent="center">
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        justifyContent="center"
+                      >
                         <IconButton
                           size="small"
                           onClick={() => handleView(newsItem)}
-                          sx={{ 
-                            color: 'info.main',
-                            '&:hover': { 
-                              backgroundColor: 'info.lighter',
-                              transform: 'scale(1.1)' 
-                            }
+                          sx={{
+                            color: "info.main",
+                            "&:hover": {
+                              backgroundColor: "info.lighter",
+                              transform: "scale(1.1)",
+                            },
                           }}
                         >
                           <VisibilityIcon fontSize="small" />
@@ -378,12 +412,12 @@ const News = () => {
                         <IconButton
                           size="small"
                           onClick={() => handleEdit(newsItem.id)}
-                          sx={{ 
-                            color: 'warning.main',
-                            '&:hover': { 
-                              backgroundColor: 'warning.lighter',
-                              transform: 'scale(1.1)' 
-                            }
+                          sx={{
+                            color: "warning.main",
+                            "&:hover": {
+                              backgroundColor: "warning.lighter",
+                              transform: "scale(1.1)",
+                            },
                           }}
                         >
                           <EditIcon fontSize="small" />
@@ -391,12 +425,12 @@ const News = () => {
                         <IconButton
                           size="small"
                           onClick={() => handleDelete(newsItem.id)}
-                          sx={{ 
-                            color: 'error.main',
-                            '&:hover': { 
-                              backgroundColor: 'error.lighter',
-                              transform: 'scale(1.1)' 
-                            }
+                          sx={{
+                            color: "error.main",
+                            "&:hover": {
+                              backgroundColor: "error.lighter",
+                              transform: "scale(1.1)",
+                            },
                           }}
                         >
                           <DeleteIcon fontSize="small" />
@@ -408,13 +442,21 @@ const News = () => {
               ) : (
                 <TableRow>
                   <TableCell colSpan={6} align="center" sx={{ py: 8 }}>
-                    <Box sx={{ textAlign: 'center' }}>
-                      <ArticleIcon sx={{ fontSize: 64, color: 'grey.300', mb: 2 }} />
+                    <Box sx={{ textAlign: "center" }}>
+                      <ArticleIcon
+                        sx={{ fontSize: 64, color: "grey.300", mb: 2 }}
+                      />
                       <Typography variant="h6" color="text.secondary">
                         Không có tin tức nào để hiển thị
                       </Typography>
-                      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                        {searchTerm ? 'Thử tìm kiếm với từ khóa khác' : 'Hãy thêm tin tức đầu tiên'}
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ mt: 1 }}
+                      >
+                        {searchTerm
+                          ? "Thử tìm kiếm với từ khóa khác"
+                          : "Hãy thêm tin tức đầu tiên"}
                       </Typography>
                     </Box>
                   </TableCell>
@@ -427,7 +469,7 @@ const News = () => {
 
       {/* Pagination */}
       {filteredNews.length > 0 && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
           <Pagination
             count={totalPages}
             page={page}
@@ -437,14 +479,14 @@ const News = () => {
             siblingCount={1}
             boundaryCount={1}
             sx={{
-              '& .MuiPaginationItem-root': {
+              "& .MuiPaginationItem-root": {
                 borderRadius: 2,
                 fontWeight: 500,
-                '&:hover': {
-                  transform: 'translateY(-2px)',
-                  transition: 'all 0.2s ease'
-                }
-              }
+                "&:hover": {
+                  transform: "translateY(-2px)",
+                  transition: "all 0.2s ease",
+                },
+              },
             }}
           />
         </Box>
@@ -461,8 +503,8 @@ const News = () => {
       />
 
       {/* View Modal with improved design */}
-      <Modal 
-        open={openView} 
+      <Modal
+        open={openView}
         onClose={handleCloseView}
         closeAfterTransition
         BackdropComponent={Backdrop}
@@ -473,37 +515,40 @@ const News = () => {
         <Fade in={openView}>
           <Box
             sx={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              width: { xs: '90%', sm: '80%', md: '60%' },
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              width: { xs: "90%", sm: "80%", md: "60%" },
               maxWidth: 700,
-              maxHeight: '90vh',
-              overflow: 'auto',
-              bgcolor: 'background.paper',
+              maxHeight: "90vh",
+              overflow: "auto",
+              bgcolor: "background.paper",
               borderRadius: 3,
-              boxShadow: '0 24px 48px rgba(0,0,0,0.2)',
+              boxShadow: "0 24px 48px rgba(0,0,0,0.2)",
               p: 0,
             }}
           >
             {selectedNews && (
-              <Card sx={{ borderRadius: 3, overflow: 'hidden' }}>
+              <Card sx={{ borderRadius: 3, overflow: "hidden" }}>
                 {/* Modal Header */}
-                <Box sx={{ 
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  color: 'white',
-                  p: 3,
-                  position: 'relative'
-                }}>
+                <Box
+                  sx={{
+                    background:
+                      "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                    color: "white",
+                    p: 3,
+                    position: "relative",
+                  }}
+                >
                   <IconButton
                     onClick={handleCloseView}
-                    sx={{ 
-                      position: 'absolute',
+                    sx={{
+                      position: "absolute",
                       right: 16,
                       top: 16,
-                      color: 'white',
-                      '&:hover': { backgroundColor: 'rgba(255,255,255,0.1)' }
+                      color: "white",
+                      "&:hover": { backgroundColor: "rgba(255,255,255,0.1)" },
                     }}
                   >
                     <CloseIcon />
@@ -516,38 +561,58 @@ const News = () => {
                 <CardContent sx={{ p: 4 }}>
                   <Stack spacing={3}>
                     <Box>
-                      <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                      <Typography
+                        variant="subtitle2"
+                        color="text.secondary"
+                        sx={{ mb: 1 }}
+                      >
                         TIÊU ĐỀ
                       </Typography>
-                      <Typography variant="h6" fontWeight="600" color="text.primary">
+                      <Typography
+                        variant="h6"
+                        fontWeight="600"
+                        color="text.primary"
+                      >
                         {selectedNews.title}
                       </Typography>
                     </Box>
 
                     <Box>
-                      <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                      <Typography
+                        variant="subtitle2"
+                        color="text.secondary"
+                        sx={{ mb: 1 }}
+                      >
                         NỘI DUNG
                       </Typography>
-                      <Typography 
-                        variant="body1" 
+                      <Typography
+                        variant="body1"
                         color="text.primary"
-                        sx={{ 
+                        sx={{
                           lineHeight: 1.7,
-                          '& p': { mb: 1 }
+                          "& p": { mb: 1 },
                         }}
-                        dangerouslySetInnerHTML={{ __html: selectedNews.content }}
+                        dangerouslySetInnerHTML={{
+                          __html: selectedNews.content,
+                        }}
                       />
                     </Box>
 
                     <Box>
-                      <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                      <Typography
+                        variant="subtitle2"
+                        color="text.secondary"
+                        sx={{ mb: 1 }}
+                      >
                         NGÀY TẠO
                       </Typography>
                       <Chip
-                        label={new Date(selectedNews.createdAt).toLocaleDateString('vi-VN', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
+                        label={new Date(
+                          selectedNews.createdAt
+                        ).toLocaleDateString("vi-VN", {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
                         })}
                         color="primary"
                         variant="outlined"
@@ -556,33 +621,40 @@ const News = () => {
 
                     {(selectedNews.imageUrl || selectedNews.imageurl) && (
                       <Box>
-                        <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2 }}>
+                        <Typography
+                          variant="subtitle2"
+                          color="text.secondary"
+                          sx={{ mb: 2 }}
+                        >
                           HÌNH ẢNH
                         </Typography>
-                        <Card sx={{ maxWidth: 400, mx: 'auto' }}>
+                        <Card sx={{ maxWidth: 400, mx: "auto" }}>
                           <CardMedia
                             component="img"
-                            image={selectedNews.imageUrl || selectedNews.imageurl}
+                            image={
+                              selectedNews.imageUrl || selectedNews.imageurl
+                            }
                             alt={selectedNews.title}
-                            sx={{ 
+                            sx={{
                               maxHeight: 300,
-                              objectFit: 'cover',
-                              borderRadius: 2
+                              objectFit: "cover",
+                              borderRadius: 2,
                             }}
                           />
                         </Card>
                       </Box>
                     )}
 
-                    <Box sx={{ pt: 2, textAlign: 'center' }}>
-                      <Button 
-                        variant="contained" 
+                    <Box sx={{ pt: 2, textAlign: "center" }}>
+                      <Button
+                        variant="contained"
                         onClick={handleCloseView}
-                        sx={{ 
+                        sx={{
                           px: 4,
                           py: 1.5,
                           borderRadius: 2,
-                          background: 'linear-gradient(45deg, #667eea, #764ba2)'
+                          background:
+                            "linear-gradient(45deg, #667eea, #764ba2)",
                         }}
                       >
                         Đóng
@@ -608,8 +680,8 @@ const News = () => {
         pauseOnHover
         theme="light"
         toastStyle={{
-          borderRadius: '12px',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.12)'
+          borderRadius: "12px",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
         }}
       />
     </Box>

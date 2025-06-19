@@ -94,6 +94,47 @@ namespace BookingSalonHair.Controllers
 
             return Ok(result);
         }
+        // GET: api/StaffTimeSlotss/staff/{staffId}/date/{date}/available
+        [HttpGet("staff/{staffId}/date/{date}/available")]
+        public async Task<IActionResult> GetAvailableSlotsByStaffAndDate(int staffId, DateTime date)
+        {
+            try
+            {
+                // Lấy các khung giờ của nhân viên trong ngày với IsBooked = false (Chưa được đặt lịch)
+                var availableSlots = await _context.StaffTimeSlots
+                    .Include(sts => sts.TimeSlot)  // Bao gồm thông tin TimeSlot
+                    .Where(sts => sts.StaffId == staffId &&
+                                  sts.TimeSlot.Date.Date == date.Date &&  // Chọn ngày cụ thể
+                                  sts.IsBooked == false)  // Chỉ lấy các slot chưa được đặt lịch
+                    .Select(sts => new
+                    {
+                        StaffTimeSlotId = sts.Id,
+                        TimeSlotId = sts.TimeSlot.Id,
+                        StartTime = sts.TimeSlot.StartTime,
+                        EndTime = sts.TimeSlot.EndTime,
+                        IsBooked = sts.IsBooked
+
+                    })
+                    .ToListAsync();
+
+                // Nếu không có khung giờ nào, trả về thông báo phù hợp
+                if (!availableSlots.Any())
+                {
+                    return NotFound(new { message = "Không có khung giờ khả dụng cho nhân viên vào ngày này." });
+                }
+
+                return Ok(new
+                {
+                    StaffId = staffId,
+                    Date = date.ToString("yyyy-MM-dd"),
+                    AvailableSlots = availableSlots
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Có lỗi xảy ra: {ex.Message}");
+            }
+        }
 
         // DELETE: api/StaffTimeSlotss/{id}
         [HttpDelete("{id}")]

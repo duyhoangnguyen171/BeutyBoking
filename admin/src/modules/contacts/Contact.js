@@ -57,8 +57,9 @@ const Contact = () => {
       const response = await ContactService.getAll();
       const data = response.data;
       if (data && Array.isArray(data.$values)) {
-        setContacts(data.$values);
-        setFilteredContacts(data.$values);
+         const sortedContacts = data.$values.sort((a, b) => b.id - a.id); 
+        setContacts(sortedContacts);
+        setFilteredContacts(sortedContacts);
       } else {
         setContacts([]);
         setFilteredContacts([]);

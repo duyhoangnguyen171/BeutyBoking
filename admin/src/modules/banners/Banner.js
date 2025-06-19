@@ -25,11 +25,13 @@ const Banner = () => {
   useEffect(() => {
     document.title = "Banner";
   }, []);
-  
+    const [filteredBanners, setFilteredBanners] = useState([]);
   const [banners, setBanners] = useState([]);
   const [openEdit, setOpenEdit] = useState(false);
   const [error, setError] = useState(null);
-  const [selectedBannerId, setSelectedBannerId] = useState(null);
+  const [selectedBannerId, setSelectedBannerId] = useState(null
+    
+  );
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [newBanner, setNewBanner] = useState({
     title: "",
@@ -40,18 +42,21 @@ const Banner = () => {
 
   // Fetch banners from API
   const fetchBanners = async () => {
-    try {
-      const response = await BannerService.getAll();
-      if (Array.isArray(response.data.$values)) {
-        setBanners(response.data.$values);
-      } else {
-        setError("Dữ liệu không hợp lệ.");
-      }
-    } catch (error) {
-      setError("Không thể tải danh sách banner.");
-      console.error("Error fetching banners:", error);
+  try {
+    const response = await BannerService.getAll();
+    if (Array.isArray(response.data.$values)) {
+      // Sắp xếp các banner theo ID giảm dần
+      const sortedBanners = response.data.$values.sort((a, b) => b.id - a.id);
+      setBanners(sortedBanners);
+      setFilteredBanners(sortedBanners);
+    } else {
+      setError("Dữ liệu không hợp lệ.");
     }
-  };
+  } catch (error) {
+    setError("Không thể tải danh sách banner.");
+    console.error("Error fetching banners:", error);
+  }
+};
 
   useEffect(() => {
     fetchBanners();

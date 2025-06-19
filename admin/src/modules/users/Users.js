@@ -71,35 +71,57 @@ const Users = () => {
   const navigate = useNavigate();
 
   const loadUsers = async () => {
-    setLoading(true);
-    try {
-      const data = await getUsers();
-      console.log("Fetched Users:", data);
-      const userList = Array.isArray(data.$values) ? data.$values : [];
-      setUsers(userList);
-      setFilteredUsers(userList);
-      if (userList.length === 0) {
-        toast.info("Không tìm thấy người dùng nào.", {
-          position: "top-right",
-          autoClose: 3000,
-        });
-      }
-    } catch (error) {
-      console.error("Error fetching users:", error);
-      setUsers([]);
-      setFilteredUsers([]);
-      toast.error(
-        "Lỗi khi tải danh sách người dùng: " +
-          (error.response?.data?.message || error.message),
-        {
-          position: "top-right",
-          autoClose: 3000,
-        }
-      );
-    } finally {
-      setLoading(false);
+  setLoading(true);
+  try {
+    const data = await getUsers();
+    console.log("Fetched Users:", data);
+    const userList = Array.isArray(data.$values) ? data.$values : [];
+
+    // Sắp xếp người dùng theo ID giảm dần
+    userList.sort((a, b) => b.id - a.id);
+
+    // Lọc và tìm kiếm người dùng
+    let filtered = [...userList];
+    if (filterRole !== "all") {
+      filtered = filtered.filter((user) => user.role === filterRole);
     }
-  };
+
+    if (searchQuery) {
+      filtered = filtered.filter(
+        (user) =>
+          (user.fullName &&
+            user.fullName.toLowerCase().includes(searchQuery.toLowerCase())) ||
+          (user.phone && user.phone.includes(searchQuery)) ||
+          (user.email &&
+            user.email.toLowerCase().includes(searchQuery.toLowerCase()))
+      );
+    }
+
+    setUsers(filtered);
+    setFilteredUsers(filtered);
+
+    if (filtered.length === 0) {
+      toast.info("Không tìm thấy người dùng nào.", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+    }
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    setUsers([]);
+    setFilteredUsers([]);
+    toast.error(
+      "Lỗi khi tải danh sách người dùng: " +
+        (error.response?.data?.message || error.message),
+      {
+        position: "top-right",
+        autoClose: 3000,
+      }
+    );
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     loadUsers();
@@ -512,7 +534,7 @@ const Users = () => {
                           </Stack>
                         </TableCell>
 
-                        <TableCell>
+                       <TableCell>
                           <Chip
                             label={user.role || "N/A"}
                             size="small"

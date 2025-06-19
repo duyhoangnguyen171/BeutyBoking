@@ -48,7 +48,7 @@ namespace BookingSalonHair.Controllers
             var totalCount = await query.CountAsync();
 
             var appointments = await query
-                .OrderBy(a => a.Id)
+                .OrderByDescending(a => a.Id) // Thay đổi để sắp xếp theo thứ tự giảm dần
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .Select(a => new
@@ -88,7 +88,6 @@ namespace BookingSalonHair.Controllers
                 CurrentPage = page
             });
         }
-
 
         // GET: api/Appointments/5
         [HttpGet("{id}")]
@@ -204,12 +203,20 @@ namespace BookingSalonHair.Controllers
                 if (isBooked)
                     return BadRequest("Khung giờ này đã được đặt cho nhân viên.");
 
-                // Đánh dấu là đã được đặt
-                staffTimeSlot.IsBooked = false;
-                _context.StaffTimeSlots.Update(staffTimeSlot);
+                // Thay đổi: Cập nhật trạng thái available của TimeSlot thành false (vì khung giờ đã được đặt)
+                var timeSlot = await _context.TimeSlots.FindAsync(staffTimeSlot.TimeSlotId);
+                if (timeSlot == null)
+                    return BadRequest("Khung giờ không tồn tại.");
+
+                // Cập nhật trường Available thành false
+                timeSlot.IsAvailable = false; // Cập nhật thời gian này không còn khả dụng
+                _context.TimeSlots.Update(timeSlot); // Cập nhật lại bảng TimeSlots
+
+                // Tiến hành lưu vào database
+                await _context.SaveChangesAsync();
             }
 
-            // Sinh mã OTP
+            // Tiến hành tạo lịch hẹn và gửi email như bình thường
             var otp = GenerateOTP();
 
             // Tạo lịch hẹn tạm thời
@@ -226,7 +233,7 @@ namespace BookingSalonHair.Controllers
                 Status = Enum.IsDefined(typeof(AppointmentStatus), dto.Status)
                             ? (AppointmentStatus)dto.Status
                             : AppointmentStatus.Accepted,
-                OTP = otp,  // Lưu mã OTP vào DB
+                OTP = otp,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
                 AppointmentServices = dto.ServiceIds
@@ -240,14 +247,14 @@ namespace BookingSalonHair.Controllers
             if (!string.IsNullOrWhiteSpace(customer?.Email))
             {
                 var emailBody = $@"
-        Xin chào {customer.FullName},
+Xin chào {customer.FullName},
 
-        Bạn đã đặt lịch hẹn vào lúc {appointment.AppointmentDate:HH:mm dd/MM/yyyy}.
-        Để xác nhận lịch hẹn của bạn, vui lòng nhập mã OTP dưới đây:
+Bạn đã đặt lịch hẹn vào lúc {appointment.AppointmentDate:HH:mm dd/MM/yyyy}.
+Để xác nhận lịch hẹn của bạn, vui lòng nhập mã OTP dưới đây:
 
-        Mã OTP của bạn là: {otp}
+Mã OTP của bạn là: {otp}
 
-        Lưu ý: Mã OTP này sẽ hết hạn sau 10 phút kể từ khi bạn nhận được email này.";
+Lưu ý: Mã OTP này sẽ hết hạn sau 10 phút kể từ khi bạn nhận được email này.";
 
                 try
                 {
