@@ -60,6 +60,7 @@ namespace BookingSalonHair.Controllers
                     a.Status,
                     a.Notes,
                     a.HasReviewed,
+                    a.IsVerified,
                     CustomerFullName = a.Customer.FullName,
                     StaffFullName = a.Staff.FullName,
                     TimeSlot = new
@@ -161,7 +162,7 @@ namespace BookingSalonHair.Controllers
             if (dto.ServiceIds == null || !dto.ServiceIds.Any())
                 return BadRequest("Phải chọn ít nhất một dịch vụ.");
 
-            if (dto.AppointmentDate <= DateTime.UtcNow)
+            if (dto.AppointmentDate < DateTime.UtcNow)
                 return BadRequest("Ngày đặt lịch phải là ngày trong tương lai.");
 
             var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -352,8 +353,12 @@ Lưu ý: Mã OTP này sẽ hết hạn sau 10 phút kể từ khi bạn nhận �
             if (existingAppointment == null)
                 return NotFound($"Không tìm thấy lịch hẹn với ID {id}.");
 
-            if (existingAppointment.StaffId.ToString() != userId && !User.IsInRole("admin"))
+            if (existingAppointment.StaffId.ToString() != userId
+            && existingAppointment.CustomerId.ToString() != userId
+            && !User.IsInRole("admin"))
+            {
                 return Forbid();
+            }
 
             if (!await _context.Users.AnyAsync(u => u.Id == appointment.CustomerId))
                 return NotFound("Khách hàng không tồn tại.");

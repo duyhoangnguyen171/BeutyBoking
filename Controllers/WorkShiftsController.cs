@@ -272,9 +272,10 @@ namespace BookingSalonHair.Controllers
 
         [HttpGet("GetStaffByDate/{date}")]
         public async Task<ActionResult<IEnumerable<User>>> GetStaffByDate(DateTime date)
+
         {
             var staffWorkShifts = await _context.UserWorkShifts
-                .Where(uws => uws.WorkShift.Date.Date == date.Date)
+                .Where(uws => uws.WorkShift.Date.Date == date.Date &&uws.IsApproved==true)
                 .Include(uws => uws.User)
                 .ToListAsync();
 
@@ -283,6 +284,7 @@ namespace BookingSalonHair.Controllers
 
             return Ok(staffWorkShifts.Select(uws => uws.User).ToList());
         }
+
         // hàm lấy time ca làm của nhân viên
         [HttpGet("GetAvailableTimeSlots/{staffId}/{date}")]
         public async Task<ActionResult<IEnumerable<TimeSlot>>> GetAvailableTimeSlots(int staffId, DateTime date)

@@ -79,9 +79,6 @@ public class UserWorkShiftController : ControllerBase
     }
 
 
-
-
-
     [HttpDelete("{userId}/{workShiftId}")]
     [Authorize(Roles = "admin")]
     public async Task<IActionResult> RemoveUserFromWorkShift(int userId, int workShiftId)
@@ -98,35 +95,47 @@ public class UserWorkShiftController : ControllerBase
         return NoContent();
     }
 
-    [HttpPut("Approve")]
-    //[Authorize(Roles = "admin")]
+    [HttpPut("approve")]
+    [Authorize(Roles = "admin")]
     public async Task<IActionResult> ApproveUserWorkShift([FromQuery] int userId, [FromQuery] int workShiftId)
     {
         var userWorkShift = await _context.UserWorkShifts
             .FirstOrDefaultAsync(x => x.UserId == userId && x.WorkShiftId == workShiftId);
 
         if (userWorkShift == null)
-            return NotFound(new { message = "Không tìm thấy đăng ký cần duyệt." });
+            return NotFound(new { message = "Không tìm thấy đăng ký." });
 
         if (userWorkShift.IsApproved)
             return BadRequest(new { message = "Đăng ký đã được duyệt trước đó." });
 
         userWorkShift.IsApproved = true;
+
+        var baseTimeSlots = await _context.TimeSlots
+            .Where(ts => ts.WorkShiftId == workShiftId)
+            .ToListAsync();
+
+        var newStaffTimeSlots = baseTimeSlots.Select(slot => new StaffTimeSlot
+        {
+            StaffId = userId,
+            TimeSlotId = slot.Id,
+            WorkShiftId = workShiftId,
+            RegisteredAt = DateTime.UtcNow,
+            IsApproved = true
+        }).ToList();
+
+        _context.StaffTimeSlots.AddRange(newStaffTimeSlots);
+
         await _context.SaveChangesAsync();
 
-        return Ok(new { message = "Đã duyệt ca làm thành công." });
+        return Ok(new { message = "Đã duyệt đăng ký và gán time slot thành công." });
     }
-
-    [HttpPost("Register")]
-    [Authorize(Roles = "staff,admin")]
-    public async Task<IActionResult> RegisterSelfToWorkShift([FromBody] RegisterWorkShiftDTO dto)
+    [HttpPost("register-staff")]
+    //[Authorize(Roles = "staff")]
+    public async Task<IActionResult> StaffRegisterSelf([FromBody] RegisterWorkShiftDTO dto)
     {
         var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (!int.TryParse(userIdClaim, out int userId))
-            return BadRequest(new { message = "ID người dùng không hợp lệ." });
-
-        if (User.IsInRole("admin") && dto.UserId != 0)
-            userId = dto.UserId;
+            return BadRequest(new { message = "Không xác định được tài khoản đăng nhập." });
 
         var workShift = await _context.WorkShifts.FindAsync(dto.WorkShiftId);
         if (workShift == null)
@@ -143,42 +152,123 @@ public class UserWorkShiftController : ControllerBase
             UserId = userId,
             WorkShiftId = dto.WorkShiftId,
             RegisteredAt = DateTime.Now,
-            IsApproved = User.IsInRole("admin")
+            IsApproved = false // ✅ Chờ admin duyệt
         };
 
         _context.UserWorkShifts.Add(userWorkShift);
         await _context.SaveChangesAsync();
 
-        var baseTimeSlots = await _context.TimeSlots
-            .Where(ts => ts.WorkShiftId == dto.WorkShiftId)
-            .ToListAsync();
+        return Ok(new { message = "Đăng ký thành công. Vui lòng chờ admin duyệt." });
+    }
+    [HttpPost("register-admin")]
+//[Authorize(Roles = "admin")]
+public async Task<IActionResult> RegisterStaffToWorkShift([FromBody] RegisterWorkShiftDTO dto)
+{
+    int userId = dto.UserId;
+    if (userId == 0)
+        return BadRequest(new { message = "ID nhân viên không hợp lệ." });
 
-        var existingSlotIds = await _context.StaffTimeSlots
-            .Where(st => st.StaffId == userId && baseTimeSlots.Select(ts => ts.Id).Contains(st.TimeSlotId))
-            .Select(st => st.TimeSlotId)
-            .ToListAsync();
+    var workShift = await _context.WorkShifts.FindAsync(dto.WorkShiftId);
+    if (workShift == null)
+        return NotFound(new { message = "Ca làm không tồn tại." });
 
-        var newStaffTimeSlots = baseTimeSlots
-    .Where(slot => !existingSlotIds.Contains(slot.Id))
-    .Select(slot => new StaffTimeSlot
+    bool alreadyRegistered = await _context.UserWorkShifts
+        .AnyAsync(x => x.UserId == userId && x.WorkShiftId == dto.WorkShiftId);
+
+    if (alreadyRegistered)
+        return BadRequest(new { message = "Nhân viên đã đăng ký ca làm này rồi." });
+
+    var userWorkShift = new UserWorkShift
+    {
+        UserId = userId,
+        WorkShiftId = dto.WorkShiftId,
+        RegisteredAt = DateTime.Now,
+        IsApproved = true // ✅ admin duyệt ngay
+    };
+
+    _context.UserWorkShifts.Add(userWorkShift);
+    await _context.SaveChangesAsync();
+
+    var baseTimeSlots = await _context.TimeSlots
+        .Where(ts => ts.WorkShiftId == dto.WorkShiftId)
+        .ToListAsync();
+
+    var newStaffTimeSlots = baseTimeSlots.Select(slot => new StaffTimeSlot
     {
         StaffId = userId,
         TimeSlotId = slot.Id,
-        WorkShiftId = dto.WorkShiftId, // ✅ FIX: Thêm khóa ngoại
+        WorkShiftId = dto.WorkShiftId,
         RegisteredAt = DateTime.UtcNow,
-        IsApproved = User.IsInRole("admin")
+        IsApproved = true
     }).ToList();
 
-        _context.StaffTimeSlots.AddRange(newStaffTimeSlots);
-        await _context.SaveChangesAsync();
+    _context.StaffTimeSlots.AddRange(newStaffTimeSlots);
+    await _context.SaveChangesAsync();
 
-        return Ok(new
-        {
-            message = User.IsInRole("admin")
-                ? "Đã gán nhân viên vào ca làm và nhân bản time slot thành công."
-                : "Đăng ký ca làm thành công. Vui lòng chờ admin duyệt."
-        });
-    }
+    return Ok(new { message = "Đăng ký và gán time slot cho nhân viên thành công." });
+}
+    //[HttpPost("register")]
+    //public async Task<IActionResult> RegisterSelfToWorkShift([FromBody] RegisterWorkShiftDTO dto)
+    //{
+    //    var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+    //    if (!int.TryParse(userIdClaim, out int userId))
+    //        return BadRequest(new { message = "ID người dùng không hợp lệ." });
+
+    //    if (User.IsInRole("admin") && dto.UserId != 0)
+    //        userId = dto.UserId;
+
+    //    var workShift = await _context.WorkShifts.FindAsync(dto.WorkShiftId);
+    //    if (workShift == null)
+    //        return NotFound(new { message = "Ca làm không tồn tại." });
+
+    //    bool alreadyRegistered = await _context.UserWorkShifts
+    //        .AnyAsync(x => x.UserId == userId && x.WorkShiftId == dto.WorkShiftId);
+
+    //    if (alreadyRegistered)
+    //        return BadRequest(new { message = "Bạn đã đăng ký ca làm này rồi." });
+
+    //    var userWorkShift = new UserWorkShift
+    //    {
+    //        UserId = userId,
+    //        WorkShiftId = dto.WorkShiftId,
+    //        RegisteredAt = DateTime.Now,
+    //        IsApproved = User.IsInRole("admin")
+    //    };
+
+    //    _context.UserWorkShifts.Add(userWorkShift);
+    //    await _context.SaveChangesAsync();
+
+    //    var baseTimeSlots = await _context.TimeSlots
+    //        .Where(ts => ts.WorkShiftId == dto.WorkShiftId)
+    //        .ToListAsync();
+
+    //    var existingSlotIds = await _context.StaffTimeSlots
+    //        .Where(st => st.StaffId == userId && baseTimeSlots.Select(ts => ts.Id).Contains(st.TimeSlotId))
+    //        .Select(st => st.TimeSlotId)
+    //        .ToListAsync();
+
+    //    var newStaffTimeSlots = baseTimeSlots
+    //.Where(slot => !existingSlotIds.Contains(slot.Id))
+    //.Select(slot => new StaffTimeSlot
+    //{
+    //    StaffId = userId,
+    //    TimeSlotId = slot.Id,
+    //    WorkShiftId = dto.WorkShiftId, // ✅ FIX: Thêm khóa ngoại
+    //    RegisteredAt = DateTime.UtcNow,
+    //    IsApproved = User.IsInRole("admin")
+    //}).ToList();
+
+    //    _context.StaffTimeSlots.AddRange(newStaffTimeSlots);
+    //    await _context.SaveChangesAsync();
+
+    //    return Ok(new
+    //    {
+    //        message = User.IsInRole("admin")
+    //            ? "Đã gán nhân viên vào ca làm và nhân bản time slot thành công."
+    //            : "Đăng ký ca làm thành công. Vui lòng chờ admin duyệt."
+    //    });
+    //}
+
 
     [HttpGet("staff-not-registered/{workShiftId}")]
     [Authorize(Roles = "admin")]

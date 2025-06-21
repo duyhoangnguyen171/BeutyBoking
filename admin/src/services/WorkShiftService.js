@@ -6,7 +6,7 @@ const BASE_URL = "https://localhost:7169/api";
 const API_URL = `${BASE_URL}/WorkShifts`;
 const API_URL_ARS = `${BASE_URL}/UserWorkShift`;
 const STAFF_NOT_REGISTERED_URL = `${BASE_URL}/UserWorkShift/staff-not-registered`;
-const REGISTER_URL = `${BASE_URL}/UserWorkShift/Register`;
+const REGISTER_URL = `${BASE_URL}/UserWorkShift/register-admin`;
 const BOOKED_BY_STAFF_URL = `${BASE_URL}/Users/bookedByStaff`;
 
 const getAuthHeader = () => {
@@ -61,26 +61,33 @@ const WorkShiftService = {
   },
 
   // Đăng ký ca làm
-  registerShift: async (workShiftId, userId) => {
+  registerShiftForAdmin: async (workShiftId, userId) => {
+  try {
+    const data = { workShiftId };
+
+    // Chỉ nếu là admin thì gửi thêm userId
+    if (userId !== undefined && userId !== null) {
+      data.userId = userId; // đúng tên theo backend
+    }
+
+    const res = await axios.post(REGISTER_URL, data, getAuthHeader());
+    return res.data;
+  } catch (error) {
+    console.error("Lỗi khi đăng ký ca làm:", error.response?.data || error.message || error);
+    throw error;
+  }
+},
+registerShiftForStaff: async (workShiftId) => {
     try {
       const data = { workShiftId };
 
-      // Chỉ nếu là admin thì gửi thêm userId
-      if (userId !== undefined && userId !== null) {
-        data.userId = userId; // đúng tên theo backend
-      }
-
-      const res = await axios.post(REGISTER_URL, data, getAuthHeader());
+      const res = await axios.post(`${BASE_URL}/UserWorkShift/register-staff`, data, getAuthHeader());
       return res.data;
     } catch (error) {
-      console.error(
-        "❌ Lỗi khi đăng ký ca làm:",
-        error.response?.data || error.message
-      );
+      console.error("Lỗi khi đăng ký ca làm cho nhân viên:", error.response?.data || error.message || error);
       throw error;
     }
   },
-
   // Gán nhân viên vào ca làm
   assignStaff: async (appointmentId, newStaffId) => {
     try {
@@ -142,21 +149,21 @@ const WorkShiftService = {
     }
   },
   getStaffByDate: async (date) => {
-    try {
-      const formattedDate = new Date(date).toISOString(); // Đảm bảo chuyển ngày thành định dạng chuẩn ISO
-      const res = await axios.get(
-        `${API_URL}/getStaffByDate/${formattedDate}`, // Điều chỉnh URL API theo yêu cầu của bạn
-        getAuthHeader()
-      );
-      return res.data; // Dữ liệu trả về là danh sách nhân viên
-    } catch (error) {
-      console.error(
-        `❌ Lỗi khi lấy danh sách nhân viên đăng ký vào ngày ${date}:`,
-        error
-      );
-      throw error;
-    }
-  },
+  try {
+    const formattedDate = new Date(date).toISOString().split("T")[0]; // Chỉ lấy yyyy-MM-dd
+    const res = await axios.get(
+      `${API_URL}/GetStaffByDate/${formattedDate}`, // Đảm bảo đường dẫn URL chính xác
+      getAuthHeader()
+    );
+    return res.data; // Dữ liệu trả về là danh sách nhân viên
+  } catch (error) {
+    console.error(
+      `❌ Lỗi khi lấy danh sách nhân viên đăng ký vào ngày ${date}:`,
+      error
+    );
+    throw error;
+  }
+},
   getTimeSlotsByStaffAndDate: async (staffId, date) => {
     try {
       const formattedDate = new Date(date).toISOString().split("T")[0]; // ✅ chỉ lấy yyyy-MM-dd

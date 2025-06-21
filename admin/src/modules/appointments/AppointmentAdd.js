@@ -132,18 +132,38 @@ const AppointmentAdd = ({ open, onClose, onSuccess, currentUserId }) => {
     fetchWorkShiftId();
   }, [appointmentData.staffId, appointmentData.appointmentDate]);
 
-  useEffect(() => {
-    if (appointmentData.appointmentDate) {
-      const fetchStaff = async () => {
-        const formattedDate = new Date(appointmentData.appointmentDate)
-          .toISOString()
-          .split("T")[0];
+ useEffect(() => {
+  if (appointmentData.appointmentDate) {
+    const fetchStaff = async () => {
+      const formattedDate = new Date(appointmentData.appointmentDate)
+        .toISOString()
+        .split("T")[0];
+      try {
         const result = await WorkShiftService.getStaffByDate(formattedDate);
-        setStaffList(result.$values || []);
-      };
-      fetchStaff();
-    }
-  }, [appointmentData.appointmentDate]);
+
+        if (result && result.$values && result.$values.length > 0) {
+          setStaffList(result.$values);
+        } else {
+          setStaffList([]);
+          toast.info("Không có nhân viên đăng ký làm vào ngày này.", {
+            position: "top-right",
+            autoClose: 3000,
+            theme: "colored",
+          });
+        }
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách nhân viên:", error);
+        setStaffList([]);
+        toast.error("Không có nhân viên đăng ký làm vào ngày này.", {
+          position: "top-right",
+          autoClose: 3000,
+          theme: "colored",
+        });
+      }
+    };
+    fetchStaff();
+  }
+}, [appointmentData.appointmentDate]);
 
   useEffect(() => {
     if (appointmentData.appointmentDate && appointmentData.staffId) {
